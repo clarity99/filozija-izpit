@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Filozofija za psihoterapevte - Študijski pripomoček</title>
+<style>
+:root {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --card-hover: #334155;
+  --accent: #3b82f6;
+  --accent2: #8b5cf6;
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --text: #e2e8f0;
+  --text-dim: #94a3b8;
+  --border: #475569;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 900px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 1.5rem; text-align: center; margin: 20px 0; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+h2 { font-size: 1.2rem; color: var(--accent); margin: 16px 0 8px; }
+h3 { font-size: 1.05rem; color: var(--accent2); margin: 12px 0 6px; }
+
+nav { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 16px 0; position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 100; border-bottom: 1px solid var(--border); }
+nav button { padding: 8px 14px; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all .2s; }
+nav button:hover, nav button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.card { background: var(--card); border-radius: 12px; padding: 20px; margin: 12px 0; border: 1px solid var(--border); }
+.card:hover { border-color: var(--accent); }
+
+.summary-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.summary-nav button { padding: 6px 12px; border: 1px solid var(--border); background: var(--card); color: var(--text-dim); border-radius: 6px; cursor: pointer; font-size: 0.8rem; text-align: left; }
+.summary-nav button:hover, .summary-nav button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.summary-content { display: none; }
+.summary-content.active { display: block; }
+
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; margin-right: 4px; }
+.tag-obvezno { background: var(--red); color: #fff; }
+.tag-izbirno { background: var(--yellow); color: #000; }
+.tag-ppt { background: var(--accent2); color: #fff; }
+
+.flashcard-container { perspective: 1000px; margin: 20px auto; max-width: 600px; }
+.flashcard { width: 100%; min-height: 250px; position: relative; cursor: pointer; transition: transform 0.6s; transform-style: preserve-3d; }
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard-face { position: absolute; width: 100%; min-height: 250px; backface-visibility: hidden; border-radius: 12px; padding: 24px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 1rem; }
+.flashcard-front { background: linear-gradient(135deg, #1e3a5f, #2d1b69); border: 2px solid var(--accent); }
+.flashcard-back { background: linear-gradient(135deg, #1b4332, #064e3b); border: 2px solid var(--green); transform: rotateY(180deg); }
+.fc-controls { display: flex; gap: 10px; justify-content: center; margin: 16px 0; align-items: center; }
+.fc-controls button { padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+.btn-prev, .btn-next { background: var(--accent); color: #fff; }
+.btn-know { background: var(--green); color: #fff; }
+.btn-dunno { background: var(--red); color: #fff; }
+.fc-counter { color: var(--text-dim); font-size: 0.85rem; }
+.fc-category { margin: 10px 0; text-align: center; }
+.fc-category select { padding: 6px 12px; border-radius: 6px; background: var(--card); color: var(--text); border: 1px solid var(--border); }
+
+.quiz-option { display: block; width: 100%; padding: 12px 16px; margin: 6px 0; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; cursor: pointer; text-align: left; font-size: 0.9rem; transition: all .2s; }
+.quiz-option:hover { border-color: var(--accent); }
+.quiz-option.correct { background: #064e3b; border-color: var(--green); }
+.quiz-option.wrong { background: #4c0519; border-color: var(--red); }
+.quiz-option.reveal { border-color: var(--green); opacity: 0.7; }
+.quiz-progress { height: 4px; background: var(--border); border-radius: 2px; margin: 10px 0; }
+.quiz-progress-bar { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+.quiz-score { text-align: center; font-size: 1.2rem; margin: 20px 0; }
+
+.essay-q { margin: 16px 0; }
+.essay-q details { background: var(--card); border-radius: 8px; padding: 12px 16px; border: 1px solid var(--border); }
+.essay-q summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+.essay-q .hint { margin-top: 10px; color: var(--text-dim); font-size: 0.9rem; padding-left: 12px; border-left: 3px solid var(--accent2); }
+
+.plan-week { margin: 12px 0; }
+.plan-day { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+.plan-day .day-label { min-width: 80px; color: var(--accent); font-weight: 600; }
+.plan-day .day-task { flex: 1; }
+.plan-check { width: 18px; height: 18px; accent-color: var(--green); cursor: pointer; }
+
+.concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.concept-card { background: var(--card); border-radius: 8px; padding: 14px; border-left: 4px solid var(--accent2); }
+.concept-card h4 { color: var(--accent); font-size: 0.95rem; margin-bottom: 4px; }
+.concept-card p { font-size: 0.85rem; color: var(--text-dim); }
+
+.search-box { width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 0.9rem; margin: 10px 0; }
+.search-box:focus { outline: none; border-color: var(--accent); }
+
+.progress-ring { text-align: center; margin: 20px 0; }
+.big-num { font-size: 3rem; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+ul, ol { margin-left: 20px; margin-bottom: 8px; }
+li { margin: 4px 0; font-size: 0.9rem; }
+p { margin: 6px 0; font-size: 0.9rem; }
+blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 8px 0; color: var(--text-dim); font-style: italic; }
+
+@media(max-width:600px) {
+  nav button { font-size: 0.75rem; padding: 6px 10px; }
+  .flashcard-face { font-size: 0.9rem; padding: 16px; }
+  .concepts-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Filozofija za psihoterapevte</h1>
+<p style="text-align:center;color:var(--text-dim);font-size:0.85rem;">SFU Ljubljana - Magistrski program - Izpit: 18. junij 2026</p>
+
+<nav id="mainNav">
+  <button onclick="show('plan')" id="nav-plan">Študijski plan</button>
+  <button onclick="show('summaries')" id="nav-summaries">Povzetki</button>
+  <button onclick="show('concepts')" id="nav-concepts">Ključni pojmi</button>
+  <button onclick="show('flashcards')" id="nav-flashcards">Flashcards</button>
+  <button onclick="show('quiz')" id="nav-quiz">Kviz</button>
+  <button onclick="show('essay')" id="nav-essay">Esejska vprašanja</button>
+  <button onclick="show('philosophers')" id="nav-philosophers">Filozofi</button>
+</nav>
+
+<!-- STUDY PLAN -->
+<div id="plan" class="section active">
+<h2>Študijski plan: 25. maj - 18. junij (24 dni)</h2>
+<div class="card">
+<p><strong>Strategija:</strong> 3 faze - branje in razumevanje (teden 1-2), utrjevanje (teden 3), ponavljanje in simulacija (teden 4).</p>
+</div>
+
+<div class="plan-week">
+<h3>Teden 1 (25.-31. maj): Obvezna literatura</h3>
+<div class="plan-day"><span class="day-label">25. maj</span><span class="day-task">Van Deurzen: Existentialism and Existential Psychotherapy (OBVEZNO 1)</span><input type="checkbox" class="plan-check" data-key="d1"></div>
+<div class="plan-day"><span class="day-label">26. maj</span><span class="day-task">Platon: Metafora votline + PPT slajdi (Predsokratiki, Platon, Sokrat)</span><input type="checkbox" class="plan-check" data-key="d2"></div>
+<div class="plan-day"><span class="day-label">27. maj</span><span class="day-task">PPT slajdi: Stoiki, Epikur, Aristoteles</span><input type="checkbox" class="plan-check" data-key="d3"></div>
+<div class="plan-day"><span class="day-label">28. maj</span><span class="day-task">PPT slajdi: Descartes, Nietzsche</span><input type="checkbox" class="plan-check" data-key="d4"></div>
+<div class="plan-day"><span class="day-label">29. maj</span><span class="day-task">Sartre: Eksistencializem je zvrst humanizma (SFU Gradivo)</span><input type="checkbox" class="plan-check" data-key="d5"></div>
+<div class="plan-day"><span class="day-label">30. maj</span><span class="day-task">Fromm: Posameznik in breme svobode (SFU Gradivo)</span><input type="checkbox" class="plan-check" data-key="d6"></div>
+<div class="plan-day"><span class="day-label">31. maj</span><span class="day-task">PPT: Heidegger, Levinas, Buber + Ponavljanje tedna</span><input type="checkbox" class="plan-check" data-key="d7"></div>
+</div>
+
+<div class="plan-week">
+<h3>Teden 2 (1.-7. jun): Izbirna literatura + poglobitev</h3>
+<div class="plan-day"><span class="day-label">1. jun</span><span class="day-task">Burston: Existentialism, Humanism and Psychotherapy</span><input type="checkbox" class="plan-check" data-key="d8"></div>
+<div class="plan-day"><span class="day-label">2. jun</span><span class="day-task">Fromm: On the Limitations and Dangers of Psychology</span><input type="checkbox" class="plan-check" data-key="d9"></div>
+<div class="plan-day"><span class="day-label">3. jun</span><span class="day-task">Krug: Bugental and Yalom - Two Masters</span><input type="checkbox" class="plan-check" data-key="d10"></div>
+<div class="plan-day"><span class="day-label">4. jun</span><span class="day-task">PPT: Fromm, Yalom, Van Deurzen (terapevtski koncepti)</span><input type="checkbox" class="plan-check" data-key="d11"></div>
+<div class="plan-day"><span class="day-label">5. jun</span><span class="day-task">PPT: Žižek, postmoderna, Lacan</span><input type="checkbox" class="plan-check" data-key="d12"></div>
+<div class="plan-day"><span class="day-label">6. jun</span><span class="day-task">Nietzsche: Nori človek + Predsokratiki besedila</span><input type="checkbox" class="plan-check" data-key="d13"></div>
+<div class="plan-day"><span class="day-label">7. jun</span><span class="day-task">Ponavljanje: Flashcards + Kviz (vsi pojmi)</span><input type="checkbox" class="plan-check" data-key="d14"></div>
+</div>
+
+<div class="plan-week">
+<h3>Teden 3 (8.-14. jun): Utrjevanje + povezave</h3>
+<div class="plan-day"><span class="day-label">8. jun</span><span class="day-task">Povezave med filozofi: Kierkegaard-Heidegger-Sartre linija</span><input type="checkbox" class="plan-check" data-key="d15"></div>
+<div class="plan-day"><span class="day-label">9. jun</span><span class="day-task">Povezave: Fromm-Marx-Freud + družbena kritika</span><input type="checkbox" class="plan-check" data-key="d16"></div>
+<div class="plan-day"><span class="day-label">10. jun</span><span class="day-task">Povezave: Filozofija in psihoterapija (Van Deurzen + Yalom)</span><input type="checkbox" class="plan-check" data-key="d17"></div>
+<div class="plan-day"><span class="day-label">11. jun</span><span class="day-task">Esejska vprašanja - pisanje odgovorov</span><input type="checkbox" class="plan-check" data-key="d18"></div>
+<div class="plan-day"><span class="day-label">12. jun</span><span class="day-task">Flashcards ponavljanje + šibke točke</span><input type="checkbox" class="plan-check" data-key="d19"></div>
+<div class="plan-day"><span class="day-label">13. jun</span><span class="day-task">Kviz simulacija izpita</span><input type="checkbox" class="plan-check" data-key="d20"></div>
+<div class="plan-day"><span class="day-label">14. jun</span><span class="day-task">Filozofska refleksija (lastna filozofija življenja)</span><input type="checkbox" class="plan-check" data-key="d21"></div>
+</div>
+
+<div class="plan-week">
+<h3>Teden 4 (15.-18. jun): Končno ponavljanje</h3>
+<div class="plan-day"><span class="day-label">15. jun</span><span class="day-task">Hitro ponavljanje vseh povzetkov</span><input type="checkbox" class="plan-check" data-key="d22"></div>
+<div class="plan-day"><span class="day-label">16. jun</span><span class="day-task">Flashcards + kviz (fokus na obvezni literaturi)</span><input type="checkbox" class="plan-check" data-key="d23"></div>
+<div class="plan-day"><span class="day-label">17. jun</span><span class="day-task">Zadnje ponavljanje ključnih pojmov in citatov</span><input type="checkbox" class="plan-check" data-key="d24"></div>
+<div class="plan-day"><span class="day-label">18. jun</span><span class="day-task">IZPIT</span><input type="checkbox" class="plan-check" data-key="d25"></div>
+</div>
+</div>
+
+<!-- SUMMARIES -->
+<div id="summaries" class="section">
+<h2>Podrobni povzetki</h2>
+<div class="summary-nav">
+  <button onclick="showSummary('s1')" class="active" id="sb-s1"><span class="tag tag-obvezno">OBVEZNO</span> Van Deurzen</button>
+  <button onclick="showSummary('s2')" id="sb-s2"><span class="tag tag-obvezno">OBVEZNO</span> Platon - Votlina</button>
+  <button onclick="showSummary('s3')" id="sb-s3"><span class="tag tag-obvezno">OBVEZNO</span> Sartre - Eksistencializem</button>
+  <button onclick="showSummary('s4')" id="sb-s4"><span class="tag tag-obvezno">OBVEZNO</span> Fromm - Svoboda</button>
+  <button onclick="showSummary('s5')" id="sb-s5"><span class="tag tag-izbirno">IZBIRNO</span> Burston</button>
+  <button onclick="showSummary('s6')" id="sb-s6"><span class="tag tag-izbirno">IZBIRNO</span> Fromm - Nevarnosti</button>
+  <button onclick="showSummary('s7')" id="sb-s7"><span class="tag tag-izbirno">IZBIRNO</span> Bugental & Yalom</button>
+  <button onclick="showSummary('s8')" id="sb-s8"><span class="tag tag-ppt">PPT</span> Predavanja</button>
+</div>
+
+<div id="s1" class="summary-content active">
+<div class="card">
+<h3>Emmy van Deurzen: Existentialism and Existential Psychotherapy</h3>
+<p><strong>Uvod:</strong> Filozofija in psihoterapija se ukvarjata s človeškim življenjem, a imata premalo sodelovanja. Eksistencialna psihoterapija je edina oblika terapije, ki temelji neposredno na filozofiji, ne na psihologiji ali medicini.</p>
+
+<h3>Izvor eksistencialne psihoterapije</h3>
+<p>Ustanovljena na začetku 20. stoletja z delom Karla Jaspersa in švicerskih psihiatrov Ludwiga Binswangerja ter Medarda Bossa. Vsi trije so se obrnili od psihiatrije k filozofiji za razumevanje čustvene stiske. Rollo May je v 50. letih eksistencialno psihiatrijo prinesel v ZDA.</p>
+
+<h3>Eksistencialne teme (po Van Deurzen)</h3>
+<ul>
+<li><strong>Ontološki opis:</strong> Filozofi opisujejo ontološko dimenzijo življenja - temeljne pogoje, ki omogočajo človeško bivanje.</li>
+<li><strong>Smisel življenja:</strong> Po Heideggerju je temeljno vprašanje "Zakaj je sploh nekaj in ne nič?" Frankl govori o treh virih smisla: prejemanje iz sveta, dajanje svetu, vzdržljivost v trpljenju.</li>
+<li><strong>Eksistencialna tesnoba (Angst):</strong> Kierkegaard - tesnoba kot vrtoglavica svobode. Razlika med tesnobo (splošno) in strahom (konkreten objekt). Tesnoba nas definira kot ločene osebe.</li>
+<li><strong>Intencionalnost:</strong> Husserl - zavest je vedno usmerjena k nečemu. Smo vedno v relaciji s svetom.</li>
+<li><strong>Življenjski svet (Lebenswelt):</strong> Husserl - vsak ima svoj svet, svojo perspektivo. Heidegger opisuje človešski svet z obzorjem, domovino in tujino.</li>
+<li><strong>Situacije in vrženost:</strong> Heidegger - vrženi smo v svet, ki že obstaja. Sartre - naše faktičnosti se ne moremo osvoboditi.</li>
+<li><strong>Mejne situacije:</strong> Jaspers - smrt, krivda, trpljenje, neuspeh. Nas soočijo z bistvom bivanja.</li>
+<li><strong>Samoprevara (Bad faith):</strong> Sartre - pretvarjamo se, da smo trdni objekti. Edina izbira, ki je nimamo, je izbira, da ne izbiramo.</li>
+<li><strong>Krhki jaz:</strong> Ni fiksnega jaza - eksistenca predhodi esenci. Jaz ustvarjamo skozi dejanja.</li>
+<li><strong>Eksistencialna krivda:</strong> Ne-uresničitev naših možnosti. Heidegger: klic vesti.</li>
+<li><strong>Skrb (Sorge):</strong> Temeljni modus bivanja - smo obsojeni na skrb.</li>
+<li><strong>Razpoloženje (Stimmung):</strong> Vedno smo v nekem razpoloženju; razpoloženje razkrije svet.</li>
+<li><strong>Razumevanje:</strong> Heidegger loči Vernunft (razum) in Verstand (razumevanje). Umsicht, Rücksicht, Durchsicht - tri oblike vpogleda.</li>
+<li><strong>Govor (Rede):</strong> Tretji eksistencial ob razpoloženju in razumevanju. Govor lahko postane prazno govorjenje (Gerede).</li>
+<li><strong>Komunikacija:</strong> Buber: I-Thou vs I-It odnos. Sartre: pesimistični pogled na odnose. Buber: pravi dialog v prostoru "med" (das Zwischen).</li>
+<li><strong>Paradoks:</strong> Napetost med nasprotji - življenje/smrt, končno/neskončno, bivajoče-za-sebe/bivajoče-na-sebi.</li>
+</ul>
+
+<h3>Štiri dimenzije eksistence</h3>
+<ul>
+<li><strong>Umwelt</strong> - fizični svet (telo, narava, preživetje)</li>
+<li><strong>Mitwelt</strong> - družbeni svet (odnosi, pripadnost vs izolacija)</li>
+<li><strong>Eigenwelt</strong> - osebni svet (identiteta, celovitost vs razpad)</li>
+<li><strong>Überwelt</strong> - duhovni svet (smisel vs nesmiselnost)</li>
+</ul>
+
+<h3>Zaključek: Dialektični pristop</h3>
+<p>Eksistencialna psihoterapija je dialektičen proces. Konflikti se nenehno ustvarjajo in razrešujejo. Terapevt pomaga klientu prepoznati specifične napetosti v njegovem življenju. Cilj: avtentično življenje s pogumom in ponižnostjo.</p>
+</div>
+</div>
+
+<div id="s2" class="summary-content">
+<div class="card">
+<h3>Platon: Metafora votline (Država, 7. knjiga)</h3>
+<p><strong>Opis alegorije:</strong> Jetniki so od rojstva prikovani v podzemeljski votlini. Vidijo le sence predmetov, ki jih metajo mimo ognja. To je njihova edina "resničnost".</p>
+<p><strong>Osvoboditev:</strong> En jetnik se osvobodi, se obrne k ognju (bolečina, zmedenost), nato pa gre ven iz votline. Sprva ga sončna svetloba oslepi, a se postopoma privadi.</p>
+<p><strong>Vrnitev:</strong> Ko se vrne v votlino, ga sojetniki zasmehujejo. Ne verjamejo mu. Če bi poskusil osvoboditi druge, bi ga morda ubili.</p>
+<p><strong>Filozofski pomen:</strong></p>
+<ul>
+<li>Sence = mnenja, iluzije, predsodki</li>
+<li>Sončna svetloba = Ideja Dobrega (resnica)</li>
+<li>Pot navzgor = filozofsko izobraževanje, anamnesis (spominjanje duše)</li>
+<li>Vrnitev = dolžnost filozofa, da pomaga drugim</li>
+</ul>
+<p><strong>Relevanca za psihoterapijo:</strong> Terapevt pomaga klientu preseči iluzije in sence (napačna prepričanja, obrambni mehanizmi) ter uzreti resničnost. Proces je boleč, a osvobodilen.</p>
+</div>
+</div>
+
+<div id="s3" class="summary-content">
+<div class="card">
+<h3>Jean-Paul Sartre: Eksistencializem je zvrst humanizma</h3>
+<p><strong>Osrednja teza: Eksistenca predhodi esenci.</strong></p>
+<p>Pri nožu esenca (namen, oblika) predhodi eksistenco. Pri človeku je obratno - človek najprej biva, se srečuje s svetom, in se šele nato definira.</p>
+
+<h3>Ključni koncepti</h3>
+<ul>
+<li><strong>Človek je to, kar sam naredi iz sebe</strong> - je svoj projekt (un projet)</li>
+<li><strong>Ateistični eksistencializem:</strong> Ni Boga, ki bi določil človeško naravo. Zato smo popolnoma odgovorni za to, kar smo.</li>
+<li><strong>Tesnoba:</strong> Vsaka izbira nas postavlja pred odgovornost za vse človeštvo - z izbiro sebe izbiramo podobo človeka.</li>
+<li><strong>Zapuščenost:</strong> Ni Boga, ni univerzalnih vrednot - smo sami svoji zakonodajalci.</li>
+<li><strong>Obup:</strong> Računamo lahko le na to, kar je v naši volji in moči.</li>
+<li><strong>Svoboda:</strong> Obsojeni smo na svobodo - nismo se ustvarili sami, a smo odgovorni za vse, kar počnemo.</li>
+<li><strong>Slaba vera (mauvaise foi):</strong> Samoprevara, ko se pretvarjamo, da nimamo izbire.</li>
+<li><strong>Izbira:</strong> Vsaka izbira nas angažira - tudi ne-izbira je izbira.</li>
+</ul>
+
+<h3>Laična morala</h3>
+<p>Eksistencializem ni pesimizem, ampak optimistična doktrina dejanja. Človek je stalno zunaj sebe, projektira se v prihodnost. Humanizem, ker postavlja človeka kot edinega zakonodajalca, ki se odloča sam.</p>
+
+<h3>Pesimizem ali optimizem?</h3>
+<p>Eksistencializem ni trdota optimizma, ampak optimizem dejanja - edina stvar, ki omogoča človeško življenje, je dejanje.</p>
+</div>
+</div>
+
+<div id="s4" class="summary-content">
+<div class="card">
+<h3>Erich Fromm: Posameznik in breme svobode (Beg pred svobodo)</h3>
+<p><strong>Osrednja teza:</strong> Svoboda prinaša osamljenost in tesnobo. Človek bega pred svobodo z različnimi mehanizmi.</p>
+
+<h3>Proces individuacije</h3>
+<p>Otrok se rodi v simbiozo z materjo. Skozi razvoj se ločuje (individuacija), kar prinaša naraščajočo osamljenost. "Svoboda od" primarnih vezi ne pomeni nujno "svobode za" avtentično življenje.</p>
+
+<h3>Mehanizmi bega pred svobodo</h3>
+<ul>
+<li><strong>Avtoritarnost:</strong> Mazohizem (podreditev) in sadizem (nadvlada drugega)</li>
+<li><strong>Destruktivnost:</strong> Uničevanje sveta, ki ogroža</li>
+<li><strong>Konformizem avtomata:</strong> "Sem to, kar želite od mene" - opustitev lastnega jaza</li>
+</ul>
+
+<h3>Pozitivna svoboda</h3>
+<p>Spontana aktivnost celotne osebnosti - ljubezen in delo kot obliki produktivne povezanosti s svetom brez opustitve individualnosti.</p>
+
+<h3>Človek kot družbeno bitje</h3>
+<p>Naše nezavedno je že družbeno strukturirano. "Družbeni filter" potlači drugačne misli. Družba oblikuje želje, sanje in značaj posameznika (socialni značaj).</p>
+</div>
+</div>
+
+<div id="s5" class="summary-content">
+<div class="card">
+<h3>Daniel Burston: Existentialism, Humanism and Psychotherapy</h3>
+<p><strong>Osrednje vprašanje:</strong> Kakšna je razlika med eksistencialnim in humanističnim pristopom k psihoterapiji?</p>
+
+<h3>Ključne ugotovitve</h3>
+<ul>
+<li>V ZDA sta eksistencialna in humanistična psihologija pogosto združeni kot "eksistencialno-humanistični" pristop - to je po mnenju evropskih terapevtov netočno.</li>
+<li>Eksistencialna psihoterapija izvira iz Evrope (20./30. leta 20. stol.), humanistična psihologija pa je ameriška inovacija (50./60. leta).</li>
+<li>Oba pristopa imata skupne korenine: poudarjanje samodoločanja, osebne izbire, dostojanstva.</li>
+<li>Eksistencialisti bolj poudarjajo tragičen občutek življenja, meje človeka, smrt. Humanisti bolj poudarjajo samoaktualizacijo, rast, pozitivno.</li>
+<li>Oba pristopa vidita simptom kot priložnost za "iskanje duše" in ne kot motnjo, ki jo je treba odstraniti.</li>
+</ul>
+
+<h3>Zgodovina pojma "humanizem"</h3>
+<p>Od Terencija ("Homo sum; nihil humani me alienum puto") preko renesanse (Pico della Mirandola), razsvetljenstva (Feuerbach, Marx) do 20. stoletja. Humanizem poudarja temeljno enakost človeške vrste in dolžnost zaščite dostojanstva.</p>
+
+<h3>Ključne razlike</h3>
+<ul>
+<li>Eksistencialisti so pogosteje psihiatri, humanisti psihologi</li>
+<li>Eksistencialisti imajo trdno filozofsko podlago, humanisti bolj poudarjajo izkustvene procese</li>
+<li>Spinelli: jasne konceptualne razlike med pristopoma</li>
+<li>Rowan: veliko prekrivanja, oba sta del iste prakse</li>
+</ul>
+</div>
+</div>
+
+<div id="s6" class="summary-content">
+<div class="card">
+<h3>Erich Fromm: On the Limitations and Dangers of Psychology</h3>
+<p><strong>Osrednja teza:</strong> Psihološko znanje ima temeljne omejitve in če te omejitve ne upoštevamo, postane psihologija nevarna za duhovni razvoj človeka.</p>
+
+<h3>Psihologija v kapitalistični družbi</h3>
+<p>Psihološko znanje (Menschenkenntnis) je v kapitalizmu postalo orodje manipulacije - tržna psihologija, "človeški odnosi" v podjetjih, politična propaganda. Delavec postane stvar, ki jo manipulirajo.</p>
+
+<h3>Omejitve psihologije</h3>
+<ul>
+<li><strong>Človek ni stvar:</strong> Popolno racionalno spoznanje je mogoče le pri stvareh. Človeka ne moremo secirati brez škode.</li>
+<li><strong>Spoznavati pomeni presegati iluzije:</strong> Legitimni cilj psihologije je negativen - odstranjevanje izkrivljenj, ne pozitivno "popolno znanje".</li>
+<li><strong>Parataksične distorzije:</strong> Vsi trpimo zaradi iluzij o sebi in drugih (projekcija, racionalizacija).</li>
+</ul>
+
+<h3>Ljubezen kot pot do spoznanja</h3>
+<p>Poleg poti misli obstaja pot ljubezni - aktivno prodiranje v drugega skozi združitev. V aktu ljubezni spoznam sebe, tebe in vse - a hkrati ne "spoznam" ničesar. To je edini način polnega spoznanja živega bitja.</p>
+
+<h3>"Negativna psihologija"</h3>
+<p>Analogija z negativno teologijo (Maimonides): o Bogu/človeku lahko rečemo le, kaj ni. Polno spoznanje je mogoče le v aktu ljubezni, ne v misli. Če psihologija pozabi te omejitve, postane nadomestek za ljubezen - beg pred pravo povezanostjo.</p>
+
+<h3>Naloga psihoanalitika</h3>
+<p>Analitik mora preseči lastno odtujenost, se povezati s pacientom od jedra do jedra, ne kot "udeleženski opazovalec", ampak kot enakovreden človek. Končno razumevanje ni interpretacija, temveč intuitivno dojemanje.</p>
+</div>
+</div>
+
+<div id="s7" class="summary-content">
+<div class="card">
+<h3>Orah Krug: James Bugental and Irvin Yalom - Two Masters of Existential Therapy</h3>
+
+<h3>Bugental: Intrapersonalni fokus</h3>
+<ul>
+<li><strong>Jaz kot proces (self-as-process):</strong> Nismo fiksna substanca, ampak stalen proces zavedanja.</li>
+<li><strong>Cilj terapije:</strong> Notranja celostnost - obnoviti "izgubljeni občutek bivanja", odkrivanje "I-ness".</li>
+<li><strong>Prisotnost:</strong> Dostopnost subjektivnemu zavedanju in zmožnost izražanja najdenega.</li>
+<li><strong>Terapevtova vloga:</strong> Trener/coach, ki teče ob klientu. Fokus na procesu, ne vsebini.</li>
+<li><strong>Here-and-now:</strong> "Kar je dejansko, je to, kar je v tej sobi, v tem sedaj."</li>
+<li><strong>Pet postulatov:</strong> (a) človek presega vsoto delov, (b) je v kontekstu, (c) je zaveden, (d) ima izbiro, (e) je intencionalen.</li>
+</ul>
+
+<h3>Yalom: Interpersonalni fokus</h3>
+<ul>
+<li><strong>Eksistencialna psihodinamika:</strong> Ne konflikt z potlačenimi nagoni, ampak soočenje z danostmi eksistence (death, isolation, freedom, meaninglessness).</li>
+<li><strong>Cilj terapije:</strong> Soočenje z eksistencialnimi danostmi in odkrivanje smisla.</li>
+<li><strong>Prisotnost:</strong> Pozornost na intersubjektivno - kaj se dogaja med nami v tem trenutku.</li>
+<li><strong>Terapevtska relacija:</strong> Centralna za zdravljenje. Yalom sprašuje: "Kaj nam besede in neverbalno vedenje povedo o naravi odnosa?"</li>
+</ul>
+
+<h3>Pet dimenzij primerjave</h3>
+<ol>
+<li><strong>Esenca in eksistencialni predikat:</strong> Tillich - oba sta potrebna. Bugental poudari esenco (self-as-process), Yalom eksistenco (danosti).</li>
+<li><strong>Cilj terapije:</strong> Bugental - notranja celostnost; Yalom - soočenje z danostmi.</li>
+<li><strong>Here-and-now:</strong> Bugental - subjektivna izkušnja; Yalom - medosebna dinamika.</li>
+<li><strong>Vloga terapevta:</strong> Bugental - intrapersonalno raziskovanje; Yalom - interpersonalno raziskovanje.</li>
+<li><strong>Terapevtski odnos:</strong> Bugental - ni centralen; Yalom - je centralen.</li>
+</ol>
+
+<h3>Ključna ugotovitev</h3>
+<p>Razlike med Bugentalom in Yalomom izhajajo iz njunih predpostavk (presuppositions), ki so se oblikovale skozi osebne izkušnje. Integracija obeh perspektiv ustvari bolj celovit pristop.</p>
+</div>
+</div>
+
+<div id="s8" class="summary-content">
+<div class="card">
+<h3>PPT Predavanja: Uvod v filozofijo za psihoterapevte</h3>
+
+<h3>I. Fenomenološka metoda</h3>
+<ul>
+<li>Konkretna izkušnja "tukaj in sedaj", poudarek na telesu</li>
+<li>Zavest je vedno intencionalna (Husserl)</li>
+<li>Epoche - vzdržanje od vseh sodb in prepričanj</li>
+<li>Biti-v-svetu-z-drugimi (Heidegger)</li>
+<li>Tri ravni raziskovanja: a) opusti teorijo, b) raziskuj klientovo izkušnjo biti-z-drugim, c) opisuj izkušnjo</li>
+</ul>
+
+<h3>II. Predsokratiki</h3>
+<ul>
+<li><strong>Heraklit:</strong> "Vse teče in se spreminja." Boj kot oče vsega. Duša je neminljiva.</li>
+<li><strong>Parmenid:</strong> Enačenje biti in mišljenja - "bivati in misliti je eno."</li>
+</ul>
+
+<h3>III. Platon, Sokrat, Aristoteles</h3>
+<ul>
+<li>Sokrat: "Vem, da nič ne vem" - drža odprtosti, sokratovsko spraševanje</li>
+<li>Platon: Metafora votline, svet idej, anamnesis</li>
+<li>Aristoteles: Zmernost (sredina med ekstremi), vrline, duša (vegetativni, čutni del, um)</li>
+</ul>
+
+<h3>IV. Stoiki</h3>
+<ul>
+<li>Cilj: mirno, obvladano življenje; strasti pod kontrolo razuma</li>
+<li>Apatija - osvobojenost od afektov</li>
+<li>4 vrline: modrost, pogum, pravičnost, zmernost</li>
+<li>4 afekti: ugodje, neugodje, poželenje, strah</li>
+</ul>
+
+<h3>V. Descartes</h3>
+<ul>
+<li>Metodični dvom - "Cogito ergo sum"</li>
+<li>Razcep med res cogitans in res extensa</li>
+<li>Kdo je tisti, ki dvomi?</li>
+</ul>
+
+<h3>VI. Nietzsche</h3>
+<ul>
+<li>"Bog je mrtev" - kriza vrednot, nihilizem</li>
+<li>Perspektivizem - ni objektivnega znanja, samo interpretacije</li>
+<li>Subjekt/jaz je fikcija</li>
+<li>Übermensch se sooči z nihilizmom</li>
+</ul>
+
+<h3>VII. Sartre - Eksistencializem</h3>
+<ul>
+<li>Eksistenca predhodi esenci</li>
+<li>Obsojeni na svobodo</li>
+<li>Tesnoba, zapuščenost, obup</li>
+<li>Avtentičnost vs slaba vera</li>
+</ul>
+
+<h3>VIII. Heidegger</h3>
+<ul>
+<li>Pozaba biti, Dasein (Tubit-i)</li>
+<li>Skrb, tesnoba, biti-k-smrti</li>
+<li>Avtentičnost vs Das Man</li>
+<li>Epoche v terapiji</li>
+</ul>
+
+<h3>IX. Levinas</h3>
+<ul>
+<li>Primarnost etike pred ontologijo</li>
+<li>Obraz drugega - ireducibilen na objekt</li>
+<li>Neskončna odgovornost za drugega</li>
+<li>Kritika redukcije drugega na predmet</li>
+</ul>
+
+<h3>X. Buber</h3>
+<ul>
+<li>Jaz-Ti vs Jaz-Ono odnos</li>
+<li>"Vse resnično življenje je srečevanje"</li>
+<li>Neposrednost odnosa - brez srednikov</li>
+<li>Terapija kot dialog dveh celotnih bitij</li>
+</ul>
+
+<h3>XI. Fromm</h3>
+<ul>
+<li>Kritika Freudovega determinizma</li>
+<li>Modus imeti vs modus biti</li>
+<li>Biofilija vs nekrofilija</li>
+<li>Bazične potrebe: po drugih, transcendenci, identiteti, okviru orientacije</li>
+<li>Odtujitev modernega človeka</li>
+</ul>
+
+<h3>XII. Žižek/Lacan</h3>
+<ul>
+<li>Subjekt je fikcija; ideologija kot praksa</li>
+<li>Kapital usmerja uživanje in želje</li>
+<li>Konstitutivni manko - celovitosti ni mogoče doseči</li>
+<li>Naša želja je želja drugega</li>
+</ul>
+
+<h3>XIII. Yalom in Van Deurzen</h3>
+<ul>
+<li>Yalom: eksistencialne teme (smrt, izolacija, svoboda, brez-smiselnost), sopotniki</li>
+<li>Van Deurzen: filozofija kot terapija, 4 dimenzije eksistence, odsotnost tehnik</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- KEY CONCEPTS -->
+<div id="concepts" class="section">
+<h2>Ključni pojmi</h2>
+<input type="text" class="search-box" id="conceptSearch" placeholder="Išči pojme..." oninput="filterConcepts()">
+<div class="concepts-grid" id="conceptsGrid">
+</div>
+</div>
+
+<!-- FLASHCARDS -->
+<div id="flashcards" class="section">
+<h2>Kartice za učenje (Flashcards)</h2>
+<div class="fc-category">
+  <select id="fcCategory" onchange="filterFlashcards()">
+    <option value="all">Vse kategorije</option>
+    <option value="filozofi">Filozofi</option>
+    <option value="pojmi">Ključni pojmi</option>
+    <option value="citati">Citati</option>
+    <option value="terapija">Terapija</option>
+    <option value="povezave">Povezave za izpit</option>
+  </select>
+</div>
+<div class="flashcard-container">
+  <div class="flashcard" id="flashcard" onclick="flipCard()">
+    <div class="flashcard-face flashcard-front" id="fcFront"></div>
+    <div class="flashcard-face flashcard-back" id="fcBack"></div>
+  </div>
+</div>
+<div class="fc-controls">
+  <button class="btn-dunno" onclick="markCard(false)">Ne znam</button>
+  <button class="btn-prev" onclick="prevCard()">&larr;</button>
+  <span class="fc-counter" id="fcCounter">1/1</span>
+  <button class="btn-next" onclick="nextCard()">&rarr;</button>
+  <button class="btn-know" onclick="markCard(true)">Znam</button>
+</div>
+<div class="progress-ring">
+  <div class="fc-counter" id="fcStats">Znane: 0 | Neznane: 0</div>
+</div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" class="section">
+<h2>Kviz</h2>
+<div class="card" id="quizArea">
+  <button onclick="startQuiz()" style="padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1rem;">Začni kviz (20 vprašanj)</button>
+</div>
+</div>
+
+<!-- ESSAY -->
+<div id="essay" class="section">
+<h2>Esejska vprašanja za pripravo na izpit</h2>
+
+<div class="essay-q"><details><summary>1. Pojasnite, zakaj je filozofija relevantna za psihoterapevtsko prakso.</summary><div class="hint">Vključite: Van Deurzen (filozofija kot temelj eksistencialne terapije), Sokratovo spraševanje, fenomenološko metodo, razliko med filozofskim in medicinskim pristopom k trpljenju. Primerjajte z behaviorizmom in psihoanalizo.</div></details></div>
+
+<div class="essay-q"><details><summary>2. Primerjajte Sartrejev in Heideggerjev pogled na avtentičnost.</summary><div class="hint">Sartre: slaba vera (mauvaise foi) vs avtentično sprejemanje svobode. Heidegger: Das Man (množica) vs lastno bivanje, biti-k-smrti kot pot k avtentičnosti. Oba: avtentičnost zahteva soočenje s tesnobo.</div></details></div>
+
+<div class="essay-q"><details><summary>3. Analizirajte Frommov koncept "bega pred svobodo" in njegovo relevanco za terapijo.</summary><div class="hint">Individuacija prinaša svobodo in osamljenost. Mehanizmi bega: avtoritarnost, destruktivnost, konformizem. Pozitivna svoboda: produktivna ljubezen in delo. Relevanca: klient lahko bega pred svobodo skozi simptome.</div></details></div>
+
+<div class="essay-q"><details><summary>4. Pojasnite razliko med Bubrovim Jaz-Ti in Jaz-Ono odnosom ter njun pomen za terapevtski odnos.</summary><div class="hint">Jaz-Ti: celostno srečevanje, drugega sprejmemo kot edinstveno totaliteto. Jaz-Ono: drugi kot objekt, ki ga kategoriziramo. V terapiji: nevarnost redukcije klienta na diagnozo (Jaz-Ono). Cilj: pristno srečevanje (Jaz-Ti).</div></details></div>
+
+<div class="essay-q"><details><summary>5. Kaj pomeni Sartrejeva teza "eksistenca predhodi esenci" in kakšne so njene implikacije?</summary><div class="hint">Ni vnaprejšnje človeške narave. Človek se najprej pojavi v svetu, nato se definira skozi dejanja. Posledice: popolna odgovornost, tesnoba izbire, ni izgovorov ("slaba vera"). Primerjava z nožem (esenca pred eksistenco).</div></details></div>
+
+<div class="essay-q"><details><summary>6. Opišite Platonovo metaforo votline in njeno uporabnost v psihoterapiji.</summary><div class="hint">Sence = iluzije/predsodki, svetloba = resnica/spoznanje. Bolečina spoznanja. Terapevt kot vodnik iz votline. Odpor klienta (jetniki ne verjamejo). Anamnesis - spominjanje resnice. Kritika: kdo določa, kaj je "resničnost"?</div></details></div>
+
+<div class="essay-q"><details><summary>7. Primerjajte Bugentala in Yaloma kot dva mojstra eksistencialne terapije.</summary><div class="hint">Bugental: intrapersonalni fokus, self-as-process, notranja celostnost. Yalom: interpersonalni fokus, eksistencialne danosti (smrt, izolacija, svoboda, nesmiselnost), terapevtski odnos kot centralen. Tillichov vpliv na oba. Komplementarnost pristopov.</div></details></div>
+
+<div class="essay-q"><details><summary>8. Pojasnite Frommovo kritiko omejitev in nevarnosti psihologije.</summary><div class="hint">"Negativna psihologija" po analogiji z negativno teologijo. Človek ni stvar - ga ne moremo secirati. Psihologija kot nadomestek za ljubezen. Pot misli vs pot ljubezni. Naloga analitika: preseči odtujenost. Nevarnost: psihologija kot orodje manipulacije.</div></details></div>
+
+<div class="essay-q"><details><summary>9. Kakšen je pomen eksistencialne tesnobe (Angst) v filozofiji in terapiji?</summary><div class="hint">Kierkegaard: vrtoglavica svobode. Heidegger: Unheimlichkeit, razlika strah/tesnoba. Sartre: tesnoba izbire. Van Deurzen: tesnoba kot pozitiven preboj. Terapija: tesnoba ni patologija, ampak eksistencialni fenomen, ki vodi k avtentičnosti.</div></details></div>
+
+<div class="essay-q"><details><summary>10. Opišite Levinasov koncept "obraza drugega" in njegovo etično dimenzijo.</summary><div class="hint">Obraz je ireducibilen na objekt/predmet. Kliče k odgovornosti: "Ne ubijaj." Neskončna odgovornost za drugega. Kritika egocentričnega subjekta. Primarnost etike pred ontologijo. Relevanca za terapijo: klient ni objekt raziskave.</div></details></div>
+
+<div class="essay-q"><details><summary>11. Primerjajte štiri dimenzije eksistence po Van Deurzen.</summary><div class="hint">Umwelt (fizično), Mitwelt (družbeno), Eigenwelt (osebno), Überwelt (duhovno). Na vsaki dimenziji napetost med nasprotji. Binswanger kot izvor (brez Überwelt). Uporaba v terapiji: kje se nahaja klientova težava?</div></details></div>
+
+<div class="essay-q"><details><summary>12. Kako Nietzschejeva "smrt Boga" vpliva na eksistencialno filozofijo in terapijo?</summary><div class="hint">Nihilizem - ni temelja za vrednote. Perspektivizem - samo interpretacije. Übermensch se sooči s krizo. Jaz kot fikcija. Vpliv na Sartra (ni Boga = popolna odgovornost), Fromma (kriza vrednot v modernem svetu), Yaloma (nesmiselnost kot eksistencialna danost).</div></details></div>
+
+<div class="essay-q"><details><summary>13. Pojasnite fenomenološko metodo in njeno uporabo v psihoterapiji.</summary><div class="hint">Husserl: intencionalnost zavesti, epoche (vzdržanje sodb), Lebenswelt. V terapiji: opusti teorijo, raziskuj klientovo živo izkušnjo, opisuj brez sojenja. Heidegger: biti-v-svetu-z-drugimi. Poudarek na konkretnem doživljanju "tukaj in sedaj".</div></details></div>
+
+<div class="essay-q"><details><summary>14. Kakšna je razlika med eksistencialnim in humanističnim pristopom k psihoterapiji (Burston)?</summary><div class="hint">Skupne korenine: samodoločanje, dostojanstvo. Razlike: eksistencialisti - filozofska podlaga, tragičen občutek, meje; humanisti - izkustveni procesi, samoaktualizacija, rast. V ZDA združeni, v Evropi ločeni. Zgodovinske razlike: Evropa vs Amerika.</div></details></div>
+</div>
+
+<!-- PHILOSOPHERS TIMELINE -->
+<div id="philosophers" class="section">
+<h2>Filozofi - Pregled</h2>
+<div class="card">
+<h3>Antika</h3>
+<p><strong>Heraklit</strong> (535-475 pr.n.št.) - "Vse teče." Boj kot oče vsega. Logos.</p>
+<p><strong>Parmenid</strong> (515 pr.n.št.) - Bit in mišljenje sta eno. Nespremenljivost biti.</p>
+<p><strong>Sokrat</strong> (470-399 pr.n.št.) - "Vem, da nič ne vem." Sokratovski dialog. Maieutika.</p>
+<p><strong>Platon</strong> (428-348 pr.n.št.) - Svet idej. Metafora votline. Anamnesis. Ideja Dobrega.</p>
+<p><strong>Aristoteles</strong> (384-322 pr.n.št.) - Zmernost. Vrline. Duša (vegetativni/čutni/um). Eudaimonia.</p>
+<p><strong>Stoiki</strong> - Zenon, Epiktet, Mark Avrelij. Apatija. 4 vrline. Živeti v sozvočju z naravo.</p>
+<p><strong>Epikur</strong> (342-271 pr.n.št.) - Ugodje kot odsotnost bolečine. Ataraksija. Skromnost.</p>
+</div>
+
+<div class="card">
+<h3>Moderna filozofija</h3>
+<p><strong>René Descartes</strong> (1596-1650) - Cogito ergo sum. Metodični dvom. Razcep duh/telo.</p>
+<p><strong>Søren Kierkegaard</strong> (1813-1855) - Tesnoba kot vrtoglavica svobode. Stadiji eksistence. Ironija.</p>
+<p><strong>Friedrich Nietzsche</strong> (1844-1900) - "Bog je mrtev." Perspektivizem. Übermensch. Volja do moči.</p>
+</div>
+
+<div class="card">
+<h3>Fenomenologija in eksistencializem</h3>
+<p><strong>Edmund Husserl</strong> (1859-1938) - Fenomenologija. Intencionalnost. Epoche. Lebenswelt.</p>
+<p><strong>Martin Heidegger</strong> (1889-1976) - Bit in čas. Dasein. Skrb. Biti-k-smrti. Avtentičnost. Das Man.</p>
+<p><strong>Jean-Paul Sartre</strong> (1905-1980) - Eksistenca predhodi esenci. Obsojeni na svobodo. Slaba vera.</p>
+<p><strong>Karl Jaspers</strong> (1883-1969) - Mejne situacije. Obkroževajoče (das Umgreifende).</p>
+<p><strong>Emmanuel Levinas</strong> (1906-1995) - Obraz drugega. Etika pred ontologijo. Neskončna odgovornost.</p>
+<p><strong>Martin Buber</strong> (1878-1965) - Jaz-Ti / Jaz-Ono. Dialog. Srečevanje.</p>
+<p><strong>Maurice Merleau-Ponty</strong> (1908-1961) - Utelešena zavest. Ambiguiteta. Percepcija.</p>
+</div>
+
+<div class="card">
+<h3>Eksistencialna psihoterapija in kritična teorija</h3>
+<p><strong>Erich Fromm</strong> (1900-1980) - Beg pred svobodo. Imeti/biti. Biofilija/nekrofilija. Odtujitev. Ljubezen.</p>
+<p><strong>Viktor Frankl</strong> (1905-1997) - Logoterapija. Volja do smisla. Tri viri smisla.</p>
+<p><strong>Rollo May</strong> (1909-1994) - Eksistencialna psihologija v ZDA. Pogum ustvarjanja.</p>
+<p><strong>Irvin Yalom</strong> (r. 1931) - Eksistencialne danosti (smrt, svoboda, izolacija, nesmiselnost). Sopotniki.</p>
+<p><strong>James Bugental</strong> (1915-2008) - Self-as-process. Intrapersonalni fokus. Subjektivno zavedanje.</p>
+<p><strong>Emmy van Deurzen</strong> (r. 1951) - 4 dimenzije eksistence. Filozofija kot terapija.</p>
+<p><strong>R.D. Laing</strong> (1927-1989) - Kritika psihiatrije. Ontološka varnost.</p>
+<p><strong>Slavoj Žižek</strong> (r. 1949) - Ideologija kot praksa. Lacanovska psihoanaliza. Manko.</p>
+</div>
+</div>
+
+</div>
+
+<script>
+// NAVIGATION
+function show(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+}
+show('plan');
+
+// STUDY PLAN CHECKBOXES
+document.querySelectorAll('.plan-check').forEach(cb => {
+  const k = cb.dataset.key;
+  cb.checked = localStorage.getItem('plan_'+k) === '1';
+  cb.addEventListener('change', () => localStorage.setItem('plan_'+k, cb.checked ? '1' : '0'));
+});
+
+// SUMMARIES
+function showSummary(id) {
+  document.querySelectorAll('.summary-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.summary-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('sb-'+id).classList.add('active');
+}
+
+// KEY CONCEPTS
+const concepts = [
+  {term:"Eksistenca predhodi esenci",def:"Sartre: Človek najprej biva, nato se definira. Ni vnaprejšnje človeške narave.",cat:"pojmi"},
+  {term:"Dasein (Tubit-i)",def:"Heidegger: Način bivanja, specifičen za človeka. 'Tu-biti' - biti v svetu.",cat:"pojmi"},
+  {term:"Angst (Tesnoba)",def:"Eksistencialna tesnoba - ni usmerjena na konkreten objekt (za razliko od strahu). Kierkegaard: vrtoglavica svobode.",cat:"pojmi"},
+  {term:"Epoche",def:"Husserl: Vzdržanje od vseh sodb, prepričanj in predsodkov. Fenomenološka redukcija.",cat:"pojmi"},
+  {term:"Intencionalnost",def:"Husserl: Zavest je vedno usmerjena k nečemu - vedno se zavedamo nečesa.",cat:"pojmi"},
+  {term:"Lebenswelt",def:"Husserl: Življenjski svet - pred-znanstveni svet vsakdanje izkušnje.",cat:"pojmi"},
+  {term:"Slaba vera (Bad faith/Mauvaise foi)",def:"Sartre: Samoprevara, ko se pretvarjamo, da nimamo izbire, da smo določeni kot stvari.",cat:"pojmi"},
+  {term:"Mejne situacije (Grenzsituationen)",def:"Jaspers: Smrt, krivda, trpljenje, boj, naključje. Nepresegljive situacije, ki definirajo naše človeštvo.",cat:"pojmi"},
+  {term:"Das Man",def:"Heidegger: 'Množica', 'Se' - anonimni Oni, ki določajo naše vedenje. Ovira avtentičnosti.",cat:"pojmi"},
+  {term:"Biti-k-smrti (Sein-zum-Tode)",def:"Heidegger: Smrt je naša lastna možnost. Soočenje s smrtjo omogoča avtentično bivanje.",cat:"pojmi"},
+  {term:"Sorge (Skrb)",def:"Heidegger: Temeljni modus bivanja. Smo obsojeni na skrb za svet in druge.",cat:"pojmi"},
+  {term:"Stimmung (Razpoloženje)",def:"Heidegger: Vedno smo v nekem razpoloženju. Razpoloženje razkrije naš odnos do sveta.",cat:"pojmi"},
+  {term:"Vrženost (Geworfenheit)",def:"Heidegger: Vrženi smo v svet, ki ga nismo izbrali - določen čas, kraj, kultura.",cat:"pojmi"},
+  {term:"Faktičnost",def:"Sartre: To, česar se ne moremo osvoboditi - naše pretekle odločitve, telo, situacija.",cat:"pojmi"},
+  {term:"Jaz-Ti / Jaz-Ono",def:"Buber: Dva modusa odnosa. Jaz-Ti: celostno srečevanje. Jaz-Ono: drugi kot objekt.",cat:"pojmi"},
+  {term:"Obraz drugega",def:"Levinas: Obraz je ireducibilen na objekt. Kliče k neskončni odgovornosti.",cat:"pojmi"},
+  {term:"Negativna psihologija",def:"Fromm: Po analogiji z negativno teologijo - o človeku lahko rečemo le, kaj ni. Polno spoznanje le v ljubezni.",cat:"pojmi"},
+  {term:"Biofilija / Nekrofilija",def:"Fromm: Ljubezen do življenja vs ljubezen do smrti/uničevanja. Dve temeljni usmeritvi značaja.",cat:"pojmi"},
+  {term:"Modus imeti / Modus biti",def:"Fromm: Imeti = posedovanje, kopičenje. Biti = zavedanje, prisotnost, kreativnost.",cat:"pojmi"},
+  {term:"Odtujitev (Alienacija)",def:"Marx/Fromm: Ločenost od produktov dela, od sebe, od drugih. Človek postane stvar.",cat:"pojmi"},
+  {term:"Self-as-process",def:"Bugental: Nismo fiksna substanca, ampak stalen proces zavedanja in ustvarjanja.",cat:"terapija"},
+  {term:"Eksistencialne danosti (Givens)",def:"Yalom: Smrt, izolacija, svoboda, nesmiselnost - neizogibna dejstva eksistence.",cat:"terapija"},
+  {term:"Kultiviranje prisotnosti",def:"Bugental/Yalom: Terapevtska metoda osvetljevanja here-and-now procesov.",cat:"terapija"},
+  {term:"4 dimenzije eksistence",def:"Van Deurzen: Umwelt (fizično), Mitwelt (družbeno), Eigenwelt (osebno), Überwelt (duhovno).",cat:"terapija"},
+  {term:"Cogito ergo sum",def:"Descartes: 'Mislim, torej sem.' Temelj moderne filozofije. Tudi če dvomimo, smo tisti, ki dvomimo.",cat:"pojmi"},
+  {term:"Perspektivizem",def:"Nietzsche: Ni objektivnega znanja, samo perspektive in interpretacije. Vsak gon ima svojo perspektivo.",cat:"pojmi"},
+  {term:"Übermensch (Nadčlovek)",def:"Nietzsche: Tisti, ki se sooči z nihilizmom in ustvari lastne vrednote po 'smrti Boga'.",cat:"pojmi"},
+  {term:"Apatija (Stoiška)",def:"Stoiki: Osvobojenost od destruktivnih afektov. Ni ravnodušnost, ampak mir razuma.",cat:"pojmi"},
+  {term:"Ataraksija",def:"Epikur: Umirjeno življenje brez nemira. Dosežemo jo z razumevanjem napačnih mnenj.",cat:"pojmi"},
+  {term:"Anamnesis",def:"Platon: Duša se spominja resnic iz sveta idej. Učenje kot spominjanje.",cat:"pojmi"},
+  {term:"Konformizem avtomata",def:"Fromm: Mehanizem bega pred svobodo - opustitev lastnega jaza, postati to, kar drugi pričakujejo.",cat:"pojmi"},
+  {term:"Parataksične distorzije",def:"Sullivan/Fromm: Izkrivljena dojemanja drugih na podlagi preteklih izkušenj (podobno transferju).",cat:"pojmi"},
+  {term:"Sokratovski dialog",def:"Metoda spraševanja za odkrivanje resnice. Brez obsojanja, s čudenjem. Maieutika - babištvo idej.",cat:"terapija"},
+  {term:"Fenomenološka redukcija",def:"Postopek, s katerim pustimo, da se fenomeni sami pokažejo, brez naših predpostavk in teorij.",cat:"pojmi"},
+  {term:"Eksistencialna krivda",def:"Van Deurzen/Heidegger: Krivda, ker ne uresničimo vseh svojih možnosti bivanja.",cat:"pojmi"},
+  {term:"Dialektični pristop",def:"Van Deurzen: Terapija kot prepoznavanje napetosti med nasprotji v klientovem življenju.",cat:"terapija"},
+  {term:"Ideologija kot praksa",def:"Žižek: Ideologija ni le napačna zavest, ampak naša vsakdanja praksa in način življenja.",cat:"pojmi"},
+  {term:"Manko (Lacan)",def:"Konstitutivni manko - celovitosti ni mogoče doseči. Kapital izkorišča ta manko.",cat:"pojmi"},
+];
+
+function renderConcepts(filter='') {
+  const grid = document.getElementById('conceptsGrid');
+  const f = filter.toLowerCase();
+  grid.innerHTML = concepts.filter(c => !f || c.term.toLowerCase().includes(f) || c.def.toLowerCase().includes(f))
+    .map(c => `<div class="concept-card"><h4>${c.term}</h4><p>${c.def}</p></div>`).join('');
+}
+renderConcepts();
+function filterConcepts() { renderConcepts(document.getElementById('conceptSearch').value); }
+
+// FLASHCARDS
+const flashcards = [
+  // Filozofi
+  {q:"Kdo je rekel 'Vse teče in se spreminja'?",a:"Heraklit (535-475 pr.n.št.)",cat:"filozofi"},
+  {q:"Kdo je uvedel pojem Dasein?",a:"Martin Heidegger - v delu Bit in čas (Sein und Zeit, 1927)",cat:"filozofi"},
+  {q:"Kdo je rekel 'Eksistenca predhodi esenci'?",a:"Jean-Paul Sartre",cat:"filozofi"},
+  {q:"Kdo je avtor koncepta 'beg pred svobodo'?",a:"Erich Fromm - v delu Beg pred svobodo (Escape from Freedom, 1941)",cat:"filozofi"},
+  {q:"Kdo je razlikoval med Jaz-Ti in Jaz-Ono odnosom?",a:"Martin Buber - v delu Jaz in Ti (Ich und Du, 1923)",cat:"filozofi"},
+  {q:"Kdo je uvedel pojem 'obraz drugega'?",a:"Emmanuel Levinas",cat:"filozofi"},
+  {q:"Kdo je rekel 'Cogito ergo sum'?",a:"René Descartes - 'Mislim, torej sem'",cat:"filozofi"},
+  {q:"Kdo je razglasil 'Bog je mrtev'?",a:"Friedrich Nietzsche - v delu Vesela znanost (Die fröhliche Wissenschaft)",cat:"filozofi"},
+  {q:"Kdo je avtor koncepta 'eksistencialnih danosti' (givens)?",a:"Irvin Yalom - smrt, izolacija, svoboda, nesmiselnost",cat:"filozofi"},
+  {q:"Kdo je razvil koncept štirih dimenzij eksistence?",a:"Emmy van Deurzen (po Binswangerju): Umwelt, Mitwelt, Eigenwelt, Überwelt",cat:"filozofi"},
+  {q:"Kdo je uvedel pojem fenomenološke epoche?",a:"Edmund Husserl",cat:"filozofi"},
+  {q:"Kdo je rekel 'Vem, da nič ne vem'?",a:"Sokrat",cat:"filozofi"},
+
+  // Pojmi
+  {q:"Kaj je epoche?",a:"Vzdržanje od vseh sodb, prepričanj in predsodkov (Husserl). V terapiji: pustimo, da se fenomeni sami pokažejo.",cat:"pojmi"},
+  {q:"Kaj je intencionalnost?",a:"Husserl: Zavest je vedno usmerjena k nečemu. Ni 'prazne' zavesti - vedno se zavedamo nečesa.",cat:"pojmi"},
+  {q:"Kaj so mejne situacije (Grenzsituationen)?",a:"Jaspers: Smrt, krivda, trpljenje, boj - neizogibne situacije, ki nas soočijo z bistvom bivanja.",cat:"pojmi"},
+  {q:"Kaj je Das Man?",a:"Heidegger: Anonimna množica 'Oni/Se', ki določa naše vedenje. Ovira avtentičnosti.",cat:"pojmi"},
+  {q:"Kaj je slaba vera (mauvaise foi)?",a:"Sartre: Samoprevara - pretvarjamo se, da nimamo izbire, da smo določeni kot stvari.",cat:"pojmi"},
+  {q:"Kaj je Lebenswelt?",a:"Husserl: Življenjski svet - pred-znanstveni svet vsakdanje izkušnje, ki je temelj vsega spoznanja.",cat:"pojmi"},
+  {q:"Kaj je perspektivizem?",a:"Nietzsche: Ni objektivnega znanja, samo interpretacije in perspektive. Vsak gon ima svojo perspektivo.",cat:"pojmi"},
+  {q:"Kaj je biofilija?",a:"Fromm: Ljubezen do življenja, vsega, kar krepi življenje, odnose in kreativnost. Nasprotje nekrofilije.",cat:"pojmi"},
+  {q:"Kaj je konformizem avtomata?",a:"Fromm: Mehanizem bega pred svobodo - opustitev lastnega jaza, postati to, kar drugi pričakujejo.",cat:"pojmi"},
+  {q:"Kaj je self-as-process?",a:"Bugental: Nismo fiksna substanca, ampak stalen proces zavedanja. 'Sem subjektivno zavedanje v nenehnem procesu.'",cat:"pojmi"},
+  {q:"Kaj je eksistencialna krivda?",a:"Krivda, ker ne uresničimo vseh svojih možnosti bivanja. Smo vedno dolžni življenju več, kot damo.",cat:"pojmi"},
+  {q:"Kaj je negativna psihologija?",a:"Fromm: O človeku lahko rečemo le, kaj ni (analogija z negativno teologijo). Polno spoznanje le v aktu ljubezni.",cat:"pojmi"},
+
+  // Citati
+  {q:"'Kdor se je naučil biti tesnoben na pravi način, se je naučil najvišjega.' - Kdo?",a:"Søren Kierkegaard (1844)",cat:"citati"},
+  {q:"'V resnici smo svoboda, ki izbira, a se ne odločimo, da ne bi izbirali.' - Kdo?",a:"Jean-Paul Sartre (1943)",cat:"citati"},
+  {q:"'Vse resnično življenje je srečevanje.' - Kdo?",a:"Martin Buber",cat:"citati"},
+  {q:"'The more unlived your life, the greater your death anxiety.' - Kdo?",a:"Irvin Yalom",cat:"citati"},
+  {q:"'Obsojeni smo na svobodo.' - Kdo in kaj pomeni?",a:"Sartre: Nismo se ustvarili sami, a smo odgovorni za vse, kar počnemo. Svoboda je breme.",cat:"citati"},
+  {q:"'Človek ni nič drugega, kakor tisto, kar se sam naredi.' - Kdo?",a:"Sartre - prvo načelo eksistencializma",cat:"citati"},
+  {q:"'Psihologija lahko pokaže, kaj človek NI.' - Kdo?",a:"Erich Fromm - legitimni cilj psihologije je negativen: odstranjevanje iluzij.",cat:"citati"},
+  {q:"'Smrt je način bivanja, ki ga tubit prevzame, brž ko je.' - Kdo?",a:"Martin Heidegger - Bit in čas",cat:"citati"},
+  {q:"'Dobro v humanistični etiki pomeni potrjevanje življenja.' - Kdo?",a:"Erich Fromm - Človek za sebe",cat:"citati"},
+  {q:"'Tudi most svobodomiselni sistem psihiatrične nomenklature je nasilen do biti drugega.' - Kdo?",a:"Irvin Yalom",cat:"citati"},
+
+  // Terapija
+  {q:"Katere so 4 eksistencialne danosti po Yalomu?",a:"Smrt, izolacija (eksistencialna), svoboda, nesmiselnost (meaninglessness)",cat:"terapija"},
+  {q:"Katere so 4 dimenzije eksistence po Van Deurzen?",a:"Umwelt (fizična), Mitwelt (družbena), Eigenwelt (osebna), Überwelt (duhovna)",cat:"terapija"},
+  {q:"Kako se razlikujeta Bugental in Yalom v fokusu?",a:"Bugental: intrapersonalni procesi (notranje zavedanje). Yalom: interpersonalni procesi (odnos, kaj se dogaja med nami).",cat:"terapija"},
+  {q:"Kaj je cilj eksistencialne terapije po Bugentalu?",a:"Notranja celostnost - obnoviti 'izgubljeni občutek bivanja', odkrivati 'I-ness' skozi subjektivno zavedanje.",cat:"terapija"},
+  {q:"Kaj je cilj eksistencialne terapije po Yalomu?",a:"Soočenje z eksistencialnimi danostmi in odkrivanje smisla. Terapevt kot sopotnik (fellow traveler).",cat:"terapija"},
+  {q:"Kateri so Frommovi mehanizmi bega pred svobodo?",a:"1. Avtoritarnost (mazohizem/sadizem), 2. Destruktivnost, 3. Konformizem avtomata",cat:"terapija"},
+  {q:"Kaj je fenomenološka metoda v terapiji?",a:"1. Opusti teorijo (epoche), 2. Raziskuj klientovo izkušnjo biti-z-drugim, 3. Opisuj izkušnjo (deskriptivno)",cat:"terapija"},
+  {q:"Kako eksistencialna terapija gleda na simptome?",a:"Simptom ni motnja za odstranitev, ampak priložnost za 'iskanje duše' - klic k avtentičnemu življenju.",cat:"terapija"},
+  {q:"Kakšna je vloga terapevta po Van Deurzen?",a:"Filozofski raziskovalec, ne tehnik. Brez diagnostike in tehnik. Kultiviranje čudenja, sokratovsko spraševanje.",cat:"terapija"},
+  {q:"Kateri so trije viri smisla po Franklu?",a:"1. Prejemanje iz sveta (estetsko uživanje), 2. Dajanje svetu (ustvarjanje), 3. Trpljenje (vzdržljivost, dostojanstvo)",cat:"terapija"},
+
+  // Povezave
+  {q:"Kakšna je linija od Kierkegaarda do Heideggerja do Sartra?",a:"Kierkegaard: tesnoba svobode → Heidegger: biti-k-smrti, avtentičnost → Sartre: eksistenca pred esenci, obsojeni na svobodo",cat:"povezave"},
+  {q:"Kako se Fromm navezuje na Marxa in Freuda?",a:"Od Freuda: pomen nezavednega. Od Marxa: odtujitev, vpliv družbe. Fromm: družba oblikuje značaj, ne le goni.",cat:"povezave"},
+  {q:"Kako se razlikujeta Sartre in Heidegger v pojmovanju svobode?",a:"Sartre: radikalna svoboda, obsojeni nanjo. Heidegger: svoboda kot razkritost - osvoboditi se Das Man za avtentično bivanje.",cat:"povezave"},
+  {q:"Kako se dopolnjujeta Buber in Levinas?",a:"Oba: primarnost drugega. Buber: dialog, srečevanje Jaz-Ti. Levinas: obraz drugega, neskončna odgovornost. Levinas radikalizira Bubrovo misel.",cat:"povezave"},
+  {q:"Kako se fenomenologija (Husserl) povezuje z eksistencializmom?",a:"Husserl: metoda (epoche, intencionalnost). Heidegger/Sartre: uporabijo metodo za analizo človeške eksistence (ne le zavesti).",cat:"povezave"},
+  {q:"Razlika med eksistencialno in humanistično psihologijo?",a:"Eksist.: evropska, filozofska podlaga, tragičen občutek. Humanist.: ameriška, izkustveni procesi, samoaktualizacija. Prekrivanje pri May, Bugentalu.",cat:"povezave"},
+];
+
+let fcFiltered = [...flashcards], fcIndex = 0, fcKnown = new Set(), fcUnknown = new Set();
+function filterFlashcards() {
+  const cat = document.getElementById('fcCategory').value;
+  fcFiltered = cat === 'all' ? [...flashcards] : flashcards.filter(f => f.cat === cat);
+  fcIndex = 0; fcKnown.clear(); fcUnknown.clear();
+  showFlashcard();
+}
+function showFlashcard() {
+  if (!fcFiltered.length) return;
+  const fc = fcFiltered[fcIndex];
+  document.getElementById('fcFront').textContent = fc.q;
+  document.getElementById('fcBack').textContent = fc.a;
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('fcCounter').textContent = `${fcIndex+1}/${fcFiltered.length}`;
+  document.getElementById('fcStats').textContent = `Znane: ${fcKnown.size} | Neznane: ${fcUnknown.size}`;
+}
+function flipCard() { document.getElementById('flashcard').classList.toggle('flipped'); }
+function nextCard() { fcIndex = (fcIndex + 1) % fcFiltered.length; showFlashcard(); }
+function prevCard() { fcIndex = (fcIndex - 1 + fcFiltered.length) % fcFiltered.length; showFlashcard(); }
+function markCard(known) {
+  const key = fcFiltered[fcIndex].q;
+  if (known) { fcKnown.add(key); fcUnknown.delete(key); }
+  else { fcUnknown.add(key); fcKnown.delete(key); }
+  nextCard();
+}
+showFlashcard();
+
+// QUIZ
+const quizQuestions = [
+  {q:"Kdo je avtor dela 'Bit in čas' (Sein und Zeit)?",opts:["Sartre","Heidegger","Husserl","Jaspers"],correct:1},
+  {q:"Kaj pomeni 'epoche' v fenomenologiji?",opts:["Končanje terapije","Vzdržanje od sodb","Obdobje v zgodovini","Eksistencialna kriza"],correct:1},
+  {q:"Katere so štiri dimenzije eksistence po Van Deurzen?",opts:["Id, Ego, Superego, Self","Umwelt, Mitwelt, Eigenwelt, Überwelt","Fizična, čustvena, kognitivna, duhovna","Preteklost, sedanjost, prihodnost, večnost"],correct:1},
+  {q:"Kaj pomeni Sartrejeva 'slaba vera' (mauvaise foi)?",opts:["Izguba religiozne vere","Samoprevara o lastni svobodi","Nezaupanje v terapevta","Pesimizem"],correct:1},
+  {q:"Kdo je uvedel pojem 'mejne situacije' (Grenzsituationen)?",opts:["Heidegger","Sartre","Jaspers","Kierkegaard"],correct:2},
+  {q:"Kateri so Frommovi mehanizmi bega pred svobodo?",opts:["Represija, projekcija, sublimacija","Avtoritarnost, destruktivnost, konformizem","Zanikanje, racionalizacija, izolacija","Introjekcija, identifikacija, regresija"],correct:1},
+  {q:"Kaj je 'Dasein'?",opts:["Bog pri Heglu","Nezavedno","Heideggerjev pojem za človeško bivanje","Husserlova metoda"],correct:2},
+  {q:"Kdo je rekel 'Vse resnično življenje je srečevanje'?",opts:["Levinas","Buber","Fromm","Yalom"],correct:1},
+  {q:"Kaj je intencionalnost po Husserlu?",opts:["Namerno delovanje","Zavest je vedno usmerjena k nečemu","Moralni namen","Terapevtski cilj"],correct:1},
+  {q:"Katere so eksistencialne danosti po Yalomu?",opts:["Tesnoba, krivda, sram, jeza","Smrt, izolacija, svoboda, nesmiselnost","Ljubezen, delo, igra, počitek","Id, ego, superego, self"],correct:1},
+  {q:"Kaj predstavljajo sence v Platonovi metafori votline?",opts:["Duše umrlih","Iluzije in napačna prepričanja","Umetniška dela","Bogovi"],correct:1},
+  {q:"Kdo je razvil koncept 'self-as-process'?",opts:["Yalom","Rogers","Bugental","May"],correct:2},
+  {q:"Kaj je Nietzschejev perspektivizem?",opts:["Vsi imamo enako perspektivo","Ni objektivnega znanja, samo interpretacije","Perspektiva se razvija z leti","Božja perspektiva je edina pravilna"],correct:1},
+  {q:"Kaj je biofilija po Frommu?",opts:["Strah pred življenjem","Ljubezen do narave","Ljubezen do življenja in vsega, kar krepi življenje","Biološki nagon"],correct:2},
+  {q:"Kako Levinas pojmuje 'obraz drugega'?",opts:["Kot estetski objekt","Kot ireducibilen na predmet, ki kliče k odgovornosti","Kot zrcalo naše duše","Kot masko, ki skriva resnico"],correct:1},
+  {q:"Kaj je Descartesov 'metodični dvom'?",opts:["Dvom o vsem, dokler ne najdemo nečesa gotovega","Dvom o Bogu","Dvom o čutih","Dvom o matematiki"],correct:0},
+  {q:"Kdo je poudaril primarnost etike pred ontologijo?",opts:["Heidegger","Sartre","Levinas","Buber"],correct:2},
+  {q:"Kaj pomeni Sartrejeva teza 'obsojeni smo na svobodo'?",opts:["Svoboda je kazen","Nismo se ustvarili, a smo odgovorni za vse","Svoboda je iluzija","Samo obsojenci so svobodni"],correct:1},
+  {q:"Kateri Bubrov koncept opisuje odnos, v katerem drugega jemljemo kot objekt?",opts:["Jaz-Ti","Jaz-Mi","Jaz-Ono","Jaz-Oni"],correct:2},
+  {q:"Kaj je Frommov 'modus imeti'?",opts:["Način bivanja, osredotočen na prisotnost","Način bivanja, osredotočen na posedovanje","Način bivanja, osredotočen na dajanje","Način bivanja, osredotočen na ljubezen"],correct:1},
+  {q:"Kdo je rekel 'Vem, da nič ne vem'?",opts:["Platon","Aristoteles","Sokrat","Heraklit"],correct:2},
+  {q:"Kaj je Heideggerjev pojem 'Sorge' (Skrb)?",opts:["Nevrotična tesnoba","Temeljni modus bivanja","Skrb za materialno","Zdravniška oskrba"],correct:1},
+  {q:"Kaj so stoiške vrline?",opts:["Vera, upanje, ljubezen, ponižnost","Modrost, pogum, pravičnost, zmernost","Moč, hitrost, vzdržljivost, gibčnost","Resnica, lepota, dobrota, enotnost"],correct:1},
+  {q:"Kdo je poudaril 'fenomenologijo' kot metodo?",opts:["Heidegger","Kierkegaard","Husserl","Sartre"],correct:2},
+  {q:"Kaj je Žižkov pojem 'ideologije kot prakse'?",opts:["Ideologija je le teoretični konstrukt","Ideologija je naša vsakdanja praksa, ne le napačna zavest","Ideologija je politična stranka","Ideologija je religija"],correct:1},
+  {q:"Kaj je 'anamnesis' pri Platonu?",opts:["Zdravniška diagnoza","Duša se spominja resnic iz sveta idej","Pozabljanje preteklosti","Psihoanalitična metoda"],correct:1},
+  {q:"Kako Fromm pojmuje vlogo analitika?",opts:["Objektivni opazovalec","Povezati se s pacientom od jedra do jedra, preseči odtujenost","Interpretirati nezavedno","Predpisati vedenjske spremembe"],correct:1},
+  {q:"Kaj je ataraksija?",opts:["Heideggerjev pojem za tesnobo","Epikurjev ideal umirjenega življenja brez nemira","Stoiška vrlina poguma","Platonov svet idej"],correct:1},
+  {q:"Kdo govori o 'treh virih smisla' (prejemanje, dajanje, trpljenje)?",opts:["Fromm","Yalom","Frankl","Van Deurzen"],correct:2},
+  {q:"Kaj je po Van Deurzen cilj eksistencialne terapije?",opts:["Odstranitev simptomov","Avtentično življenje s pogumom in ponižnostjo","Samoaktualizacija","Analiza nezavednega"],correct:1},
+];
+
+let quizState = {current:0, score:0, answered:false, questions:[]};
+
+function startQuiz() {
+  quizState.questions = [...quizQuestions].sort(() => Math.random()-0.5).slice(0,20);
+  quizState.current = 0; quizState.score = 0; quizState.answered = false;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const area = document.getElementById('quizArea');
+  if (quizState.current >= quizState.questions.length) {
+    const pct = Math.round(quizState.score / quizState.questions.length * 100);
+    area.innerHTML = `<div class="quiz-score"><div class="big-num">${pct}%</div><p>${quizState.score}/${quizState.questions.length} pravilnih</p><p style="margin-top:10px;color:var(--text-dim)">${pct >= 80 ? 'Odlično! Snov dobro obvladaš.' : pct >= 60 ? 'Dobro, a je prostor za izboljšave.' : 'Ponovi snov in poskusi znova!'}</p><button onclick="startQuiz()" style="margin-top:16px;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;">Ponovi kviz</button></div>`;
+    return;
+  }
+  const q = quizState.questions[quizState.current];
+  quizState.answered = false;
+  area.innerHTML = `
+    <div class="quiz-progress"><div class="quiz-progress-bar" style="width:${(quizState.current/quizState.questions.length)*100}%"></div></div>
+    <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:8px;">Vprašanje ${quizState.current+1}/${quizState.questions.length}</p>
+    <p style="font-size:1rem;margin-bottom:16px;font-weight:600;">${q.q}</p>
+    ${q.opts.map((o,i) => `<button class="quiz-option" onclick="answerQuiz(${i})" id="qopt${i}">${o}</button>`).join('')}
+  `;
+}
+
+function answerQuiz(idx) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+  const q = quizState.questions[quizState.current];
+  if (idx === q.correct) {
+    quizState.score++;
+    document.getElementById('qopt'+idx).classList.add('correct');
+  } else {
+    document.getElementById('qopt'+idx).classList.add('wrong');
+    document.getElementById('qopt'+q.correct).classList.add('correct');
+  }
+  setTimeout(() => { quizState.current++; renderQuizQuestion(); }, 1200);
+}
+</script>
+</body>
+</html>
