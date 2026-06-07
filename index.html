@@ -120,7 +120,7 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 
 #voicePanel {
   position: fixed; right: 20px; bottom: 92px; width: 380px; max-width: calc(100vw - 40px);
-  max-height: 82vh; background: var(--card); border: 1px solid var(--border);
+  height: min(82vh, 600px); background: var(--card); border: 1px solid var(--border);
   border-radius: 16px; z-index: 200; display: none; flex-direction: column;
   box-shadow: 0 12px 40px rgba(0,0,0,.55); overflow: hidden;
 }
@@ -134,7 +134,7 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 .va-status.error { color: var(--red); border-color: var(--red); }
 .va-close { margin-left: auto; background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; line-height: 1; }
 
-.va-transcript { flex: 1 1 0; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 120px; }
+.va-transcript { flex: 1 1 0; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 .va-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
 .va-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
 .va-msg.assistant { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
@@ -1164,7 +1164,9 @@ function vaAddMsg(role, text) {
   return div;
 }
 function vaSetInterim(text) {
-  document.getElementById('vaInterim').textContent = text || '';
+  const el = document.getElementById('vaInterim');
+  el.textContent = text || '';
+  el.scrollTop = el.scrollHeight; // keep the newest words visible inside the capped interim box
   vaScrollBottom(false);
 }
 
