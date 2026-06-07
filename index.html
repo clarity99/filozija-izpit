@@ -1465,10 +1465,12 @@ function vaStartTTS(cfg) {
   VA.muteInput = true; // half-duplex: mute mic while speaking
   VA._ttsDoneHandled = false;
   VA._audioChunks = 0;
+  VA.ttsStreamId = 'va-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const sid = VA.ttsStreamId;
   vaSetStatus('govorim…', 'speaking');
   vaInitPlayback();
   ws.onopen = () => {
-    console.log('[TTS] ws open -> sending config (voice=' + (cfg.voice || 'Adrian') + ')');
+    console.log('[TTS] ws open -> sending config (voice=' + (cfg.voice || 'Adrian') + ', stream_id=' + sid + ')');
     ws.send(JSON.stringify({
       api_key: cfg.soniox,
       model: 'tts-rt-v1',
@@ -1476,13 +1478,14 @@ function vaStartTTS(cfg) {
       voice: cfg.voice || 'Adrian',
       audio_format: 'pcm_s16le',
       sample_rate: 24000,
+      stream_id: sid,
     }));
     // flush any buffered sentences queued before socket opened
     if (VA._ttsQueue && VA._ttsQueue.length) {
-      for (const txt of VA._ttsQueue) ws.send(JSON.stringify({ text: txt, text_end: false }));
+      for (const txt of VA._ttsQueue) ws.send(JSON.stringify({ text: txt, text_end: false, stream_id: sid }));
       VA._ttsQueue = [];
     }
-    if (VA._ttsEndPending) { ws.send(JSON.stringify({ text: '', text_end: true })); VA._ttsEndPending = false; }
+    if (VA._ttsEndPending) { ws.send(JSON.stringify({ text: '', text_end: true, stream_id: sid })); VA._ttsEndPending = false; }
   };
   ws.onmessage = (ev) => {
     let msg; try { msg = JSON.parse(ev.data); } catch (e) { console.warn('[TTS] non-JSON msg', ev.data); return; }
@@ -1499,7 +1502,7 @@ function vaStartTTS(cfg) {
 function vaSendTTSText(text) {
   if (!text) return;
   if (VA.ttsWs && VA.ttsWs.readyState === 1) {
-    VA.ttsWs.send(JSON.stringify({ text: text, text_end: false }));
+    VA.ttsWs.send(JSON.stringify({ text: text, text_end: false, stream_id: VA.ttsStreamId }));
   } else {
     (VA._ttsQueue = VA._ttsQueue || []).push(text);
   }
@@ -1520,7 +1523,7 @@ function vaFeedTTSDelta(delta) {
 function vaFlushTTS() {
   if (VA.ttsSentenceBuf.trim()) { vaSendTTSText(VA.ttsSentenceBuf); VA.ttsSentenceBuf = ''; }
   if (VA.ttsWs && VA.ttsWs.readyState === 1) {
-    VA.ttsWs.send(JSON.stringify({ text: '', text_end: true }));
+    VA.ttsWs.send(JSON.stringify({ text: '', text_end: true, stream_id: VA.ttsStreamId }));
   } else {
     VA._ttsEndPending = true;
   }
