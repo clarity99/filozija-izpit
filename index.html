@@ -730,7 +730,8 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
   <div class="va-header">
     <h3>Glasovni mentor</h3>
     <span class="va-status" id="vaStatus">pripravljen</span>
-    <button class="va-close" onclick="vaTogglePanel()" title="Zapri">×</button>
+    <button class="va-close" onclick="vaClearConversation()" title="Počisti pogovor" aria-label="Počisti pogovor">🗑</button>
+    <button class="va-close" onclick="vaTogglePanel()" title="Zapri" style="margin-left:4px;">×</button>
   </div>
   <div class="va-transcript" id="vaTranscript">
     <div class="va-empty">Pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>
@@ -1161,6 +1162,27 @@ function vaSetInterim(text) {
   t.scrollTop = t.scrollHeight;
 }
 
+// ---- Conversation persistence (resume across reloads) ----
+function vaSaveHistory() {
+  try { localStorage.setItem('voice_history', JSON.stringify(VA.history || [])); } catch (e) {}
+}
+function vaRestoreHistory() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem('voice_history') || '[]'); } catch (e) { saved = []; }
+  if (!Array.isArray(saved) || !saved.length) return;
+  VA.history = saved;
+  for (const m of saved) {
+    if (m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string') vaAddMsg(m.role, m.content);
+  }
+}
+function vaClearConversation() {
+  VA.history = [];
+  try { localStorage.removeItem('voice_history'); } catch (e) {}
+  document.getElementById('vaTranscript').innerHTML =
+    '<div class="va-empty">Pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>';
+  vaSetInterim('');
+}
+
 // ---- Page context ----
 function vaGetPageContext() {
   let parts = [];
@@ -1420,6 +1442,7 @@ async function vaOnUserTurn(userText) {
   if (VA.isThinking) return;
   vaAddMsg('user', userText);
   VA.history.push({ role: 'user', content: userText });
+  vaSaveHistory();
   VA.isThinking = true;
   VA.bargedIn = false;
   VA.llmAbort = new AbortController();
@@ -1496,7 +1519,7 @@ async function vaOnUserTurn(userText) {
   } catch (e) {
     if (e.name === 'AbortError') {
       // user barged in: keep any partial reply for context, stay listening (status already set)
-      if (assistantText.trim()) VA.history.push({ role: 'assistant', content: assistantText + ' …(prekinjeno)' });
+      if (assistantText.trim()) { VA.history.push({ role: 'assistant', content: assistantText + ' …(prekinjeno)' }); vaSaveHistory(); }
       VA.isThinking = false;
       return;
     }
@@ -1507,7 +1530,7 @@ async function vaOnUserTurn(userText) {
     return;
   }
 
-  if (assistantText.trim()) VA.history.push({ role: 'assistant', content: assistantText });
+  if (assistantText.trim()) { VA.history.push({ role: 'assistant', content: assistantText }); vaSaveHistory(); }
   vaFlushTTS();
   VA.isThinking = false;
   if (!ttsStarted && VA.active) vaSetStatus('poslušam…', 'listening');
@@ -1638,6 +1661,9 @@ function vaStopPlayback() {
   VA.playSources = [];
   if (VA.playCtx) VA.nextStartTime = VA.playCtx.currentTime;
 }
+
+// Restore any saved conversation so it can be resumed after a reload.
+vaRestoreHistory();
 </script>
 </body>
 </html>
