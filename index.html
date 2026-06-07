@@ -1065,6 +1065,10 @@ VLOGA — si HKRATI mentor IN izpraševalec:
 - Študenta IZPRAŠUJEŠ kot na ustnem izpitu: postavi vprašanje, počakaj na njegov odgovor, nato ga oceni, dopolni in popravi napake.
 - Spodbujaj kritično mišljenje, sokratsko sprašuj, povezuj filozofe med seboj.
 
+TON: Bodi topel, spodbuden in spoštljiv sogovornik — nikoli pokroviteljski ali grajajoč. Pohvali, kar je dobro, in šele nato nežno dopolni. Cilj je krepiti študentovo samozavest pred izpitom, ne ga ujeti v napaki.
+
+POMEMBNO — VNOS PRIHAJA IZ GOVORA (STT): Študentov vnos je samodejno prepoznan govor in pogosto vsebuje napake pri prepisu, ZLASTI pri lastnih imenih in tujih izrazih (imena kot Heidegger, Nietzsche, Levinas, Husserl, Sartre, van Deurzen, Kierkegaard se lahko prepišejo napačno ali fonetično). NIKOLI ne očitaj študentu napačno zapisanega imena ali črkovanja in ga ne popravljaj zaradi tega — iz konteksta razberi, koga/kaj misli, in domnevaj pravilno različico. Popravljaj LE vsebinske, pojmovne napake, in to nežno. Če res ne razbereš pomena, prijazno vprašaj za pojasnilo.
+
 JEZIK: Pogovarjaj se v SLOVENŠČINI. Razumeš tudi angleške izraze in citate (študent jih lahko uporabi) — a odgovarjaj v slovenščini.
 
 SLOG ZA GLAS: Odgovori naj bodo KRATKI in pogovorni (običajno 2–5 stavkov), saj se pretvorijo v govor. Brez naštevanja z oznakami, brez markdown formatiranja, brez emojijev. Govori naravno, kot v živo. Če je tema obsežna, jo razčleni in vprašaj, ali naj nadaljuješ.
@@ -1230,6 +1234,7 @@ async function vaStartConversation() {
 function vaStopConversation() {
   VA.active = false;
   if (VA.silenceTimer) { clearTimeout(VA.silenceTimer); VA.silenceTimer = null; }
+  if (VA._sttReconnectTimer) { clearTimeout(VA._sttReconnectTimer); VA._sttReconnectTimer = null; }
   VA.isSpeaking = false; VA.muteInput = false; VA.isThinking = false;
   vaStopPlayback();
   try { if (VA.sttWs && VA.sttWs.readyState === 1) { VA.sttWs.send(''); VA.sttWs.close(); } } catch (e) {}
@@ -1265,11 +1270,27 @@ async function vaStartSTT(cfg) {
   const blobUrl = URL.createObjectURL(new Blob([workletCode], { type: 'application/javascript' }));
   await ctx.audioWorklet.addModule(blobUrl);
 
+  // Mic capture is set up ONCE and survives STT socket reconnects.
+  VA.sourceNode = ctx.createMediaStreamSource(VA.micStream);
+  VA.workletNode = new AudioWorkletNode(ctx, 'pcm-forward');
+  VA.workletNode.port.onmessage = (ev) => vaPushAudio(ev.data);
+  VA.sourceNode.connect(VA.workletNode);
+  // worklet has no audible output; do NOT connect to destination
+
+  VA._sttCfg = cfg;
+  VA._sttRate = sampleRate;
+  vaConnectSTT();
+}
+
+// Open (or re-open) the STT WebSocket. Mic capture already streams into vaPushAudio.
+function vaConnectSTT() {
+  const cfg = VA._sttCfg, sampleRate = VA._sttRate;
   const ws = new WebSocket('wss://stt-rt.eu.soniox.com/transcribe-websocket');
   VA.sttWs = ws;
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
+    console.log('[STT] ws open');
     ws.send(JSON.stringify({
       api_key: cfg.soniox,
       model: 'stt-rt-v4',
@@ -1279,29 +1300,33 @@ async function vaStartSTT(cfg) {
       language_hints: ['sl', 'en'],
       enable_endpoint_detection: true,
     }));
-    // wire up mic capture
-    VA.sourceNode = ctx.createMediaStreamSource(VA.micStream);
-    VA.workletNode = new AudioWorkletNode(ctx, 'pcm-forward');
-    VA.workletNode.port.onmessage = (ev) => vaPushAudio(ev.data);
-    VA.sourceNode.connect(VA.workletNode);
-    // worklet has no audible output; do NOT connect to destination
-    vaSetStatus('poslušam…', 'listening');
+    if (VA.active && !VA.isSpeaking) vaSetStatus('poslušam…', 'listening');
   };
-
   ws.onmessage = (ev) => {
     let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
-    if (msg.error_code || msg.error_message) { vaSetStatus('STT napaka', 'error'); return; }
+    if (msg.error_code || msg.error_message) { console.error('[STT] server error', msg); vaSetStatus('STT napaka: ' + (msg.error_message || msg.error_code), 'error'); return; }
     vaHandleSTT(msg);
   };
-  ws.onerror = () => vaSetStatus('STT povezava ni uspela', 'error');
-  ws.onclose = () => { if (VA.active && !VA.isThinking && !VA.isSpeaking) { /* unexpected */ } };
+  ws.onerror = (e) => { console.error('[STT] ws error', e); };
+  ws.onclose = (e) => {
+    console.log('[STT] ws close code=' + e.code + ' active=' + VA.active);
+    if (VA.sttWs === ws) VA.sttWs = null;
+    // Auto-reconnect if the session is still active (e.g. Soniox idle/timeout close).
+    if (VA.active) {
+      if (VA._sttReconnectTimer) clearTimeout(VA._sttReconnectTimer);
+      VA._sttReconnectTimer = setTimeout(() => {
+        if (VA.active && (!VA.sttWs || VA.sttWs.readyState > 1)) { console.log('[STT] reconnecting…'); vaConnectSTT(); }
+      }, 400);
+    }
+  };
 }
 
 function vaPushAudio(float32) {
   if (!VA.sttWs || VA.sttWs.readyState !== 1) return;
-  // Half-duplex: while the assistant is speaking, drop mic input so its own voice
-  // is not transcribed back (echo / feedback loop). Re-enabled once playback drains.
-  if (VA.muteInput) { VA.sendBuf = []; return; }
+  // While the assistant is speaking, send SILENCE instead of the mic. This keeps the
+  // STT socket alive (no idle-close) and prevents the assistant's own voice from being
+  // transcribed back as user input (echo). Real mic resumes once playback drains.
+  if (VA.muteInput) float32 = new Float32Array(float32.length);
   // accumulate ~100ms then convert to Int16 and send
   VA.sendBuf.push(float32);
   let total = VA.sendBuf.reduce((n, a) => n + a.length, 0);
@@ -1321,6 +1346,9 @@ function vaPushAudio(float32) {
 function vaHandleSTT(msg) {
   // Log the first few raw messages so the exact token/endpoint shape can be verified on first run.
   if (VA._sttMsgCount < 3) { VA._sttMsgCount++; console.log('[STT raw]', JSON.stringify(msg)); }
+
+  // Ignore transcription while the assistant is speaking (we feed silence then, but be defensive).
+  if (VA.muteInput) return;
 
   const tokens = msg.tokens || [];
   let endpoint = false;
