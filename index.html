@@ -1071,14 +1071,17 @@ SLOG ZA GLAS: Odgovori naj bodo KRATKI in pogovorni (običajno 2–5 stavkov), s
 
 KONTEKST ZASLONA: Včasih dobiš podatek, kaj študent trenutno gleda v aplikaciji ali kaj je označil. Ko reče "to", "tole", "ta pojem" ipd., se nanaša na ta kontekst — uporabi ga.
 
-Ostani na snovi izpita. Tvoje znanje izhaja iz tega gradiva:
-${VA_COURSE}`;
+Ostani na snovi izpita. Tvoje znanje izhaja iz priloženega gradiva — polna besedila vseh virov za izpit ti bodo dana posebej. Opiraj se nanje; kadar je smiselno, navedi, iz katerega vira (npr. van Deurzen, Yalom, zapiski predavanj) izhaja misel.`;
+
+// Fallback grounding (kratek povzetek), uporabljen le, če se polno gradivo (gradivo.txt) ne naloži.
+const VA_COURSE_FALLBACK = VA_COURSE;
 
 const VA = {
   sttWs: null, ttsWs: null,
   micStream: null, captureCtx: null, workletNode: null, sourceNode: null,
   playCtx: null, nextStartTime: 0, playSources: [],
   sendBuf: [],
+  corpus: null,
   history: [],
   finalText: '', interimText: '',
   active: false, status: 'idle',
@@ -1166,6 +1169,23 @@ function vaGetPageContext() {
   return parts.join('\n');
 }
 
+// ---- Grounding corpus (full source texts) ----
+async function vaLoadCorpus() {
+  if (VA.corpus) return VA.corpus;
+  try {
+    const resp = await fetch('gradivo.txt', { cache: 'force-cache' });
+    if (resp.ok) {
+      VA.corpus = await resp.text();
+      console.log('[corpus] loaded gradivo.txt:', VA.corpus.length, 'chars');
+    } else {
+      console.warn('[corpus] gradivo.txt fetch failed', resp.status, '- using fallback digest');
+    }
+  } catch (e) {
+    console.warn('[corpus] gradivo.txt not available - using fallback digest', e);
+  }
+  return VA.corpus;
+}
+
 // ---- Conversation control ----
 async function vaToggleConversation() {
   if (VA.active) { vaStopConversation(); return; }
@@ -1174,6 +1194,7 @@ async function vaToggleConversation() {
 
 async function vaStartConversation() {
   vaPersistInputs(); // use whatever is currently typed in the fields, even without clicking "Shrani"
+  vaLoadCorpus();     // prefetch full source texts (non-blocking); cached for the session
   const cfg = vaCfg();
   if (!cfg.soniox || !cfg.openrouter) {
     vaSetStatus('manjkajo ključi', 'error');
@@ -1357,7 +1378,17 @@ async function vaOnUserTurn(userText) {
 
   const cfg = vaCfg();
   const pageCtx = vaGetPageContext();
-  const messages = [{ role: 'system', content: VA_SYSTEM_PROMPT }];
+  await vaLoadCorpus();
+  const grounding = VA.corpus || VA_COURSE_FALLBACK;
+  // Large static system block with prompt caching (Anthropic via OpenRouter): the full
+  // source texts are processed once and reused cheaply across turns of the conversation.
+  const messages = [{
+    role: 'system',
+    content: [
+      { type: 'text', text: VA_SYSTEM_PROMPT },
+      { type: 'text', text: '\n\n=== POLNO GRADIVO ZA IZPIT ===\n' + grounding, cache_control: { type: 'ephemeral' } },
+    ],
+  }];
   if (pageCtx) messages.push({ role: 'system', content: 'Trenutni kontekst v aplikaciji:\n' + pageCtx });
   for (const m of VA.history) messages.push(m);
 
