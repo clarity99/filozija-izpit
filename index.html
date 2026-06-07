@@ -120,12 +120,12 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 
 #voicePanel {
   position: fixed; right: 20px; bottom: 92px; width: 380px; max-width: calc(100vw - 40px);
-  max-height: 70vh; background: var(--card); border: 1px solid var(--border);
+  max-height: 82vh; background: var(--card); border: 1px solid var(--border);
   border-radius: 16px; z-index: 200; display: none; flex-direction: column;
   box-shadow: 0 12px 40px rgba(0,0,0,.55); overflow: hidden;
 }
 #voicePanel.open { display: flex; }
-.va-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.va-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .va-header h3 { margin: 0; color: var(--accent); font-size: 1rem; }
 .va-status { font-size: 0.72rem; padding: 3px 10px; border-radius: 999px; background: var(--bg); color: var(--text-dim); border: 1px solid var(--border); white-space: nowrap; }
 .va-status.listening { color: var(--green); border-color: var(--green); }
@@ -134,21 +134,21 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 .va-status.error { color: var(--red); border-color: var(--red); }
 .va-close { margin-left: auto; background: none; border: none; color: var(--text-dim); font-size: 1.3rem; cursor: pointer; line-height: 1; }
 
-.va-transcript { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 160px; }
+.va-transcript { flex: 1 1 auto; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 70px; }
 .va-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; line-height: 1.45; white-space: pre-wrap; word-wrap: break-word; }
 .va-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
 .va-msg.assistant { align-self: flex-start; background: var(--bg); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
 .va-interim { align-self: flex-end; color: var(--text-dim); font-style: italic; font-size: 0.8rem; padding: 2px 12px; min-height: 0; }
 .va-empty { color: var(--text-dim); font-size: 0.82rem; text-align: center; margin: auto; }
 
-.va-controls { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); }
+.va-controls { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
 .va-mic { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; background: var(--green); color: #fff; transition: background .2s; }
 .va-mic.live { background: var(--red); }
 .va-mic:disabled { opacity: .5; cursor: not-allowed; }
 
-.va-settings { border-top: 1px solid var(--border); }
+.va-settings { border-top: 1px solid var(--border); flex-shrink: 0; }
 .va-settings summary { padding: 10px 16px; cursor: pointer; color: var(--text-dim); font-size: 0.8rem; }
-.va-settings .va-set-body { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; }
+.va-settings .va-set-body { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; }
 .va-settings label { font-size: 0.72rem; color: var(--text-dim); display: block; margin-bottom: 2px; }
 .va-settings input, .va-settings select { width: 100%; padding: 7px 10px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.8rem; }
 .va-settings .va-hint { font-size: 0.68rem; color: var(--text-dim); line-height: 1.4; }
@@ -1098,11 +1098,14 @@ function vaLoadSettings() {
   document.getElementById('vaModel').value = localStorage.getItem('voice_model') || 'anthropic/claude-opus-4.6';
   document.getElementById('vaVoice').value = localStorage.getItem('voice_name') || 'Adrian';
 }
-function vaSaveSettings() {
+function vaPersistInputs() {
   localStorage.setItem('voice_soniox_key', document.getElementById('vaSoniox').value.trim());
   localStorage.setItem('voice_or_key', document.getElementById('vaOpenRouter').value.trim());
   localStorage.setItem('voice_model', document.getElementById('vaModel').value.trim() || 'anthropic/claude-opus-4.6');
   localStorage.setItem('voice_name', document.getElementById('vaVoice').value.trim() || 'Adrian');
+}
+function vaSaveSettings() {
+  vaPersistInputs();
   vaSetStatus('shranjeno', '');
   setTimeout(() => { if (!VA.active) vaSetStatus('pripravljen', ''); }, 1500);
 }
@@ -1170,6 +1173,7 @@ async function vaToggleConversation() {
 }
 
 async function vaStartConversation() {
+  vaPersistInputs(); // use whatever is currently typed in the fields, even without clicking "Shrani"
   const cfg = vaCfg();
   if (!cfg.soniox || !cfg.openrouter) {
     vaSetStatus('manjkajo ključi', 'error');
@@ -1188,6 +1192,15 @@ async function vaStartConversation() {
   VA.muteInput = false;
   VA.silenceTimer = null;
   VA._sttMsgCount = 0;
+  // Unlock audio playback inside the user gesture (browser autoplay policy),
+  // otherwise the AudioContext created later stays suspended and TTS is silent.
+  try {
+    if (!VA.playCtx || VA.playCtx.state === 'closed') {
+      VA.playCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+    }
+    if (VA.playCtx.state === 'suspended') await VA.playCtx.resume();
+    console.log('[TTS] playback ctx state:', VA.playCtx.state, 'rate:', VA.playCtx.sampleRate);
+  } catch (e) { console.warn('[TTS] could not init playback ctx', e); }
   document.getElementById('vaMic').textContent = '⏹ Končaj pogovor';
   document.getElementById('vaMic').classList.add('live');
   await vaStartSTT(cfg);
@@ -1420,9 +1433,11 @@ function vaStartTTS(cfg) {
   VA.isSpeaking = true;
   VA.muteInput = true; // half-duplex: mute mic while speaking
   VA._ttsDoneHandled = false;
+  VA._audioChunks = 0;
   vaSetStatus('govorim…', 'speaking');
   vaInitPlayback();
   ws.onopen = () => {
+    console.log('[TTS] ws open -> sending config (voice=' + (cfg.voice || 'Adrian') + ')');
     ws.send(JSON.stringify({
       api_key: cfg.soniox,
       model: 'tts-rt-v1',
@@ -1439,12 +1454,13 @@ function vaStartTTS(cfg) {
     if (VA._ttsEndPending) { ws.send(JSON.stringify({ text: '', text_end: true })); VA._ttsEndPending = false; }
   };
   ws.onmessage = (ev) => {
-    let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
-    if (msg.audio) vaPlayPCM(msg.audio);
-    if (msg.terminated || msg.audio_end) vaOnTTSDone();
+    let msg; try { msg = JSON.parse(ev.data); } catch (e) { console.warn('[TTS] non-JSON msg', ev.data); return; }
+    if (msg.error_code || msg.error_message) { console.error('[TTS] error from server:', msg); vaSetStatus('TTS napaka: ' + (msg.error_message || msg.error_code), 'error'); return; }
+    if (msg.audio) { VA._audioChunks++; vaPlayPCM(msg.audio); }
+    if (msg.terminated || msg.audio_end) { console.log('[TTS] done, audio chunks received:', VA._audioChunks); vaOnTTSDone(); }
   };
-  ws.onerror = () => { vaSetStatus('TTS napaka', 'error'); };
-  ws.onclose = () => { /* handled by vaOnTTSDone */ };
+  ws.onerror = (e) => { console.error('[TTS] ws error', e); vaSetStatus('TTS napaka', 'error'); };
+  ws.onclose = (e) => { console.log('[TTS] ws close code=' + e.code + ' reason=' + (e.reason || '') + ' chunks=' + VA._audioChunks); if (VA._audioChunks === 0 && VA.isSpeaking) { vaSetStatus('TTS brez zvoka (preveri konzolo)', 'error'); vaOnTTSDone(); } };
   VA._ttsQueue = [];
   VA._ttsEndPending = false;
 }
@@ -1507,6 +1523,7 @@ function vaInitPlayback() {
 
 function vaPlayPCM(b64) {
   if (!VA.playCtx || VA.bargedIn) return;
+  if (VA.playCtx.state === 'suspended') VA.playCtx.resume();
   const bin = atob(b64);
   const len = bin.length;
   const bytes = new Uint8Array(len);
