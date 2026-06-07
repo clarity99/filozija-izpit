@@ -1081,7 +1081,7 @@ SLOG ZA GLAS: Odgovori naj bodo KRATKI in pogovorni (običajno 2–5 stavkov), s
 
 KONTEKST ZASLONA: Včasih dobiš podatek, kaj študent trenutno gleda v aplikaciji ali kaj je označil. Ko reče "to", "tole", "ta pojem" ipd., se nanaša na ta kontekst — uporabi ga.
 
-Ostani na snovi izpita. Tvoje znanje izhaja iz priloženega gradiva — polna besedila vseh virov za izpit ti bodo dana posebej. Opiraj se nanje; kadar je smiselno, navedi, iz katerega vira (npr. van Deurzen, Yalom, zapiski predavanj) izhaja misel.`;
+GRADIVO IN ORODJE get_source: Na voljo imaš kazalo virov za izpit (zapiski predavanj in literatura). Polnih besedil NIMAŠ v kontekstu — ko potrebuješ konkretno vsebino, citat ali podrobnost iz nekega vira, pokliči orodje "get_source" z ustreznim source_id in preberi besedilo. Preveri vir, preden navajaš konkretne trditve, citate ali stališča avtorja; ne ugibaj. Za isto vprašanje lahko prebereš več virov. NE napovedi uporabe orodja in NE komentiraj, da nekaj preverjaš — tiho preberi in odgovori naravno. Kadar je smiselno, navedi, iz katerega vira izhaja misel (npr. van Deurzen, Yalom, zapiski predavanj). Ostani na snovi izpita.`;
 
 // Fallback grounding (kratek povzetek), uporabljen le, če se polno gradivo (gradivo.txt) ne naloži.
 const VA_COURSE_FALLBACK = VA_COURSE;
@@ -1216,7 +1216,8 @@ async function vaLoadCorpus() {
     const resp = await fetch('gradivo.txt', { cache: 'force-cache' });
     if (resp.ok) {
       VA.corpus = await resp.text();
-      console.log('[corpus] loaded gradivo.txt:', VA.corpus.length, 'chars');
+      vaParseSources(VA.corpus);
+      console.log('[corpus] loaded gradivo.txt:', VA.corpus.length, 'chars,', Object.keys(VA.sources || {}).length, 'sources');
     } else {
       console.warn('[corpus] gradivo.txt fetch failed', resp.status, '- using fallback digest');
     }
@@ -1224,6 +1225,25 @@ async function vaLoadCorpus() {
     console.warn('[corpus] gradivo.txt not available - using fallback digest', e);
   }
   return VA.corpus;
+}
+
+// Split the corpus into individual sources (by "## VIR:" headers) and build a small
+// index. Only the index goes into the prompt; full texts are fetched on demand via the
+// get_source tool — so the model reads only what it needs (keeps token cost low).
+function vaParseSources(full) {
+  VA.sources = {};
+  const headers = [...full.matchAll(/\n#{2} VIR: (.+)\n/g)];
+  for (let i = 0; i < headers.length; i++) {
+    const title = headers[i][1].trim();
+    const start = headers[i].index + headers[i][0].length;
+    const end = (i + 1 < headers.length) ? headers[i + 1].index : full.length;
+    const body = full.slice(start, end).split('\n').filter(l => !/^=+$/.test(l.trim())).join('\n').trim();
+    VA.sources['s' + (i + 1)] = { id: 's' + (i + 1), title, text: body };
+  }
+  VA.sourceIndex = Object.values(VA.sources)
+    .map(s => '- ' + s.id + ': ' + s.title + ' (~' + Math.round(s.text.length / 4 / 1000) + 'k tokenov)')
+    .join('\n');
+  VA.sourceIds = Object.keys(VA.sources);
 }
 
 // ---- Conversation control ----
@@ -1445,103 +1465,157 @@ function vaFireUserTurn() {
   vaOnUserTurn(userText);
 }
 
-// ---- LLM turn (OpenRouter Claude, streaming) ----
+// ---- LLM turn (OpenRouter Claude, streaming + tool calling) ----
+// The model only gets a small INDEX of sources in its prompt. When it needs the actual
+// content it calls the get_source tool, and we return that one document. This keeps the
+// per-turn token cost low instead of sending all ~79k tokens of corpus every time.
 async function vaOnUserTurn(userText) {
   if (VA.isThinking) return;
   vaAddMsg('user', userText);
   VA.history.push({ role: 'user', content: userText });
   vaSaveHistory();
   VA.isThinking = true;
-  VA.bargedIn = false;
   VA.llmAbort = new AbortController();
   vaSetStatus('razmišljam…', 'thinking');
 
   const cfg = vaCfg();
-  const pageCtx = vaGetPageContext();
   await vaLoadCorpus();
-  const grounding = VA.corpus || VA_COURSE_FALLBACK;
-  // Large static system block with prompt caching (Anthropic via OpenRouter): the full
-  // source texts are processed once and reused cheaply across turns of the conversation.
-  const messages = [{
-    role: 'system',
-    content: [
-      { type: 'text', text: VA_SYSTEM_PROMPT },
-      { type: 'text', text: '\n\n=== POLNO GRADIVO ZA IZPIT ===\n' + grounding, cache_control: { type: 'ephemeral' } },
-    ],
-  }];
-  if (pageCtx) messages.push({ role: 'system', content: 'Trenutni kontekst v aplikaciji:\n' + pageCtx });
-  for (const m of VA.history) messages.push(m);
+  const pageCtx = vaGetPageContext();
 
-  let assistantText = '';
+  const sysText = VA_SYSTEM_PROMPT + (VA.sourceIndex
+    ? '\n\n=== KAZALO VIROV (z get_source preberi polno besedilo) ===\n' + VA.sourceIndex
+    : '\n\n=== GRADIVO (povzetek) ===\n' + VA_COURSE_FALLBACK);
+  const base = [{ role: 'system', content: [{ type: 'text', text: sysText, cache_control: { type: 'ephemeral' } }] }];
+  if (pageCtx) base.push({ role: 'system', content: 'Trenutni kontekst v aplikaciji:\n' + pageCtx });
+
+  const tools = (VA.sourceIds && VA.sourceIds.length) ? [{
+    type: 'function',
+    function: {
+      name: 'get_source',
+      description: 'Vrne polno besedilo izbranega vira iz gradiva za izpit. Pokliči, ko potrebuješ konkretno vsebino, citat ali podrobnost iz vira.',
+      parameters: { type: 'object', properties: { source_id: { type: 'string', description: 'ID vira iz kazala, npr. s1.', enum: VA.sourceIds } }, required: ['source_id'] },
+    },
+  }] : undefined;
+
   VA.curAssistantEl = null;
+  VA._assistantText = '';
   VA.ttsSentenceBuf = '';
   let ttsStarted = false;
   const startTts = () => { if (!ttsStarted) { ttsStarted = true; vaStartTTS(cfg); } };
 
   try {
-    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + cfg.openrouter,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': location.origin || 'https://clarity99.github.io/filozija-izpit/',
-        'X-Title': 'Filozofija Glasovni Mentor',
-      },
-      body: JSON.stringify({ model: cfg.model, messages: messages, stream: true }),
-      signal: VA.llmAbort.signal,
-    });
-    if (!resp.ok || !resp.body) {
-      const errTxt = await resp.text().catch(() => '');
-      vaSetStatus('LLM napaka (' + resp.status + ')', 'error');
-      VA.isThinking = false;
-      if (VA.active) vaSetStatus('poslušam…', 'listening');
-      console.error('OpenRouter error', resp.status, errTxt);
-      return;
-    }
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop();
-      for (const line of lines) {
-        const t = line.trim();
-        if (!t || !t.startsWith('data:')) continue;
-        const data = t.slice(5).trim();
-        if (data === '[DONE]') continue;
-        let json; try { json = JSON.parse(data); } catch (e) { continue; }
-        const delta = json.choices && json.choices[0] && json.choices[0].delta && json.choices[0].delta.content;
-        if (delta) {
-          assistantText += delta;
-          if (!VA.curAssistantEl) VA.curAssistantEl = vaAddMsg('assistant', '');
-          VA.curAssistantEl.textContent = assistantText;
-          vaScrollBottom(false);
-          startTts();
-          vaFeedTTSDelta(delta);
+    for (let iter = 0; iter < 5; iter++) {
+      const messages = base.concat(VA.history);
+      const res = await vaStreamLLM(cfg, messages, tools, startTts);
+      if (res.toolCalls.length) {
+        VA.history.push({ role: 'assistant', content: (res.text && res.text.trim()) ? res.text : null, tool_calls: res.toolCalls });
+        for (const tc of res.toolCalls) {
+          const out = vaExecTool(tc);
+          console.log('[tool] ' + (tc.function.name) + '(' + (tc.function.arguments || '') + ') -> ' + out.length + ' chars');
+          VA.history.push({ role: 'tool', tool_call_id: tc.id, content: out });
         }
+        vaSaveHistory();
+        vaSetStatus('berem vir…', 'thinking');
+        continue; // ask again now that the source is available
       }
+      if (res.text && res.text.trim()) { VA.history.push({ role: 'assistant', content: res.text }); vaSaveHistory(); }
+      break;
     }
   } catch (e) {
     if (e.name === 'AbortError') {
-      // user barged in: keep any partial reply for context, stay listening (status already set)
-      if (assistantText.trim()) { VA.history.push({ role: 'assistant', content: assistantText + ' …(prekinjeno)' }); vaSaveHistory(); }
+      if (VA._assistantText.trim()) { VA.history.push({ role: 'assistant', content: VA._assistantText + ' …(prekinjeno)' }); vaSaveHistory(); }
       VA.isThinking = false;
       return;
     }
-    vaSetStatus('napaka pri pošiljanju', 'error');
+    vaSetStatus('napaka: ' + (e.message || e), 'error');
     console.error(e);
     VA.isThinking = false;
     if (VA.active) vaSetStatus('poslušam…', 'listening');
     return;
   }
 
-  if (assistantText.trim()) { VA.history.push({ role: 'assistant', content: assistantText }); vaSaveHistory(); }
   vaFlushTTS();
   VA.isThinking = false;
   if (!ttsStarted && VA.active) vaSetStatus('poslušam…', 'listening');
+}
+
+// One streaming LLM request. Streams text deltas to the transcript + TTS, and accumulates
+// any tool calls. Returns { text, toolCalls, finishReason }. Throws on HTTP error / abort.
+async function vaStreamLLM(cfg, messages, tools, startTts) {
+  const body = { model: cfg.model, messages: messages, stream: true };
+  if (tools) body.tools = tools;
+  const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + cfg.openrouter,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': location.origin || 'https://clarity99.github.io/filozija-izpit/',
+      'X-Title': 'Filozofija Glasovni Mentor',
+    },
+    body: JSON.stringify(body),
+    signal: VA.llmAbort.signal,
+  });
+  if (!resp.ok || !resp.body) {
+    const errTxt = await resp.text().catch(() => '');
+    throw new Error('LLM ' + resp.status + ' ' + errTxt.slice(0, 160));
+  }
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '', text = '', finish = null;
+  const toolMap = {};
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split('\n');
+    buf = lines.pop();
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith('data:')) continue;
+      const data = t.slice(5).trim();
+      if (data === '[DONE]') continue;
+      let json; try { json = JSON.parse(data); } catch (e) { continue; }
+      const ch = json.choices && json.choices[0];
+      if (!ch) continue;
+      const d = ch.delta || {};
+      if (d.content) {
+        text += d.content;
+        VA._assistantText += d.content;
+        if (!VA.curAssistantEl) VA.curAssistantEl = vaAddMsg('assistant', '');
+        VA.curAssistantEl.textContent = VA._assistantText;
+        vaScrollBottom(false);
+        startTts();
+        vaFeedTTSDelta(d.content);
+      }
+      if (d.tool_calls) {
+        for (const tc of d.tool_calls) {
+          const i = (tc.index != null) ? tc.index : 0;
+          if (!toolMap[i]) toolMap[i] = { id: tc.id, type: 'function', function: { name: '', arguments: '' } };
+          if (tc.id) toolMap[i].id = tc.id;
+          if (tc.function) {
+            if (tc.function.name) toolMap[i].function.name += tc.function.name;
+            if (tc.function.arguments) toolMap[i].function.arguments += tc.function.arguments;
+          }
+        }
+      }
+      if (ch.finish_reason) finish = ch.finish_reason;
+    }
+  }
+  const toolCalls = Object.keys(toolMap).sort((a, b) => a - b).map(k => toolMap[k]).filter(tc => tc.function.name);
+  return { text: text, toolCalls: toolCalls, finishReason: finish };
+}
+
+// Execute a tool call locally (no network) — returns the requested source text.
+function vaExecTool(tc) {
+  try {
+    if (tc.function && tc.function.name === 'get_source') {
+      const args = JSON.parse(tc.function.arguments || '{}');
+      const sec = VA.sources && VA.sources[args.source_id];
+      if (sec) return sec.text.slice(0, 80000);
+      return 'Vir "' + args.source_id + '" ni najden. Razpoložljivi ID-ji: ' + (VA.sourceIds || []).join(', ');
+    }
+  } catch (e) { return 'Napaka pri branju vira: ' + (e.message || e); }
+  return 'Neznano orodje.';
 }
 
 // ---- Soniox TTS (text -> speech) ----
