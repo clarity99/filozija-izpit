@@ -758,6 +758,10 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
         <label>Glas (Soniox TTS)</label>
         <input type="text" id="vaVoice" placeholder="Adrian">
       </div>
+      <div>
+        <label>Premor pred odgovorom (s) — koliko časa tišine pomeni "končal sem"</label>
+        <input type="number" id="vaPause" min="1" max="10" step="0.5" placeholder="3">
+      </div>
       <button class="va-save" onclick="vaSaveSettings()">Shrani</button>
       <p class="va-hint">Ključi se shranijo lokalno v tem brskalniku (localStorage) in se ne pošljejo nikamor razen Soniox/OpenRouter. Mikrofon deluje le prek <strong>https</strong> (npr. GitHub Pages) ali <strong>localhost</strong>.</p>
     </div>
@@ -1104,12 +1108,14 @@ function vaLoadSettings() {
   document.getElementById('vaOpenRouter').value = localStorage.getItem('voice_or_key') || '';
   document.getElementById('vaModel').value = localStorage.getItem('voice_model') || 'anthropic/claude-opus-4.6';
   document.getElementById('vaVoice').value = localStorage.getItem('voice_name') || 'Adrian';
+  document.getElementById('vaPause').value = localStorage.getItem('voice_pause') || '3';
 }
 function vaPersistInputs() {
   localStorage.setItem('voice_soniox_key', document.getElementById('vaSoniox').value.trim());
   localStorage.setItem('voice_or_key', document.getElementById('vaOpenRouter').value.trim());
   localStorage.setItem('voice_model', document.getElementById('vaModel').value.trim() || 'anthropic/claude-opus-4.6');
   localStorage.setItem('voice_name', document.getElementById('vaVoice').value.trim() || 'Adrian');
+  localStorage.setItem('voice_pause', document.getElementById('vaPause').value || '3');
 }
 function vaSaveSettings() {
   vaPersistInputs();
@@ -1323,10 +1329,9 @@ function vaConnectSTT() {
 
 function vaPushAudio(float32) {
   if (!VA.sttWs || VA.sttWs.readyState !== 1) return;
-  // While the assistant is speaking, send SILENCE instead of the mic. This keeps the
-  // STT socket alive (no idle-close) and prevents the assistant's own voice from being
-  // transcribed back as user input (echo). Real mic resumes once playback drains.
-  if (VA.muteInput) float32 = new Float32Array(float32.length);
+  // Full-duplex: the mic streams continuously, even while the assistant speaks, so the
+  // user can interrupt (barge-in). Use headphones to avoid the assistant's voice echoing
+  // back into the mic (echoCancellation is also enabled on the stream).
   // accumulate ~100ms then convert to Int16 and send
   VA.sendBuf.push(float32);
   let total = VA.sendBuf.reduce((n, a) => n + a.length, 0);
@@ -1347,17 +1352,21 @@ function vaHandleSTT(msg) {
   // Log the first few raw messages so the exact token/endpoint shape can be verified on first run.
   if (VA._sttMsgCount < 3) { VA._sttMsgCount++; console.log('[STT raw]', JSON.stringify(msg)); }
 
-  // Ignore transcription while the assistant is speaking (we feed silence then, but be defensive).
-  if (VA.muteInput) return;
-
   const tokens = msg.tokens || [];
-  let endpoint = false;
+  const isMarker = (t) => t === '<end>' || t === '<eou>' || t === '<fin>';
+
+  // Does this message contain real (non-marker) speech?
+  let hasContent = false;
+  for (const tk of tokens) { if (tk.text && !isMarker(tk.text)) { hasContent = true; break; } }
+
+  // BARGE-IN: user starts speaking while the assistant is responding -> interrupt it and
+  // let this become a new turn. (After our pause-based turn end, the previous utterance is
+  // fully finalized, so new content here is genuine user speech, not a trailing token.)
+  if (hasContent && (VA.isSpeaking || VA.isThinking)) vaBargeIn();
+
   let gotContent = false;
   for (const tk of tokens) {
-    // Endpoint/finalization markers: handle the documented <end>, plus defensive variants.
-    if (tk.text === '<end>' || tk.text === '<eou>' || tk.is_endpoint || msg.endpoint) { endpoint = true; continue; }
-    if (tk.text === '<fin>') continue;
-    if (!tk.text) continue;
+    if (!tk.text || isMarker(tk.text)) continue; // ignore Soniox endpoint markers; pause-timer governs turn end
     gotContent = true;
     if (tk.is_final) {
       if (VA.finalText === '' && VA.uttFired) VA.uttFired = false; // new utterance begins
@@ -1367,21 +1376,32 @@ function vaHandleSTT(msg) {
 
   // live interim display (finalized + provisional)
   let interim = VA.finalText;
-  for (const tk of tokens) {
-    if (tk.text && !tk.is_final && tk.text !== '<end>' && tk.text !== '<fin>' && tk.text !== '<eou>') interim += tk.text;
-  }
+  for (const tk of tokens) { if (tk.text && !tk.is_final && !isMarker(tk.text)) interim += tk.text; }
   vaSetInterim(interim);
 
-  // Silence-timer fallback: if no new tokens arrive shortly after we have final text,
-  // treat it as end-of-utterance. This makes turn-taking work even if <end> never arrives.
+  // End of turn = a pause with no new speech for `pauseMs`. Configurable, so you can think
+  // without being cut off. Resets on every new token.
   if (gotContent) {
     if (VA.silenceTimer) clearTimeout(VA.silenceTimer);
+    const pauseMs = (parseFloat(localStorage.getItem('voice_pause')) || 3) * 1000;
     VA.silenceTimer = setTimeout(() => {
       if (VA.active && !VA.isThinking && !VA.isSpeaking) vaFireUserTurn();
-    }, 1500);
+    }, pauseMs);
   }
+}
 
-  if (endpoint) vaFireUserTurn();
+// Interrupt an in-progress assistant response (TTS playback + LLM stream).
+function vaBargeIn() {
+  console.log('[barge-in] user interrupted assistant');
+  if (VA._ttsDrainTimer) { clearTimeout(VA._ttsDrainTimer); VA._ttsDrainTimer = null; }
+  VA._ttsDoneHandled = true;
+  vaStopPlayback();
+  try { if (VA.ttsWs) VA.ttsWs.close(); } catch (e) {}
+  VA.ttsWs = null;
+  if (VA.llmAbort) { try { VA.llmAbort.abort(); } catch (e) {} }
+  VA.isSpeaking = false;
+  VA.isThinking = false;
+  vaSetStatus('poslušam…', 'listening');
 }
 
 function vaFireUserTurn() {
@@ -1402,6 +1422,7 @@ async function vaOnUserTurn(userText) {
   VA.history.push({ role: 'user', content: userText });
   VA.isThinking = true;
   VA.bargedIn = false;
+  VA.llmAbort = new AbortController();
   vaSetStatus('razmišljam…', 'thinking');
 
   const cfg = vaCfg();
@@ -1436,6 +1457,7 @@ async function vaOnUserTurn(userText) {
         'X-Title': 'Filozofija Glasovni Mentor',
       },
       body: JSON.stringify({ model: cfg.model, messages: messages, stream: true }),
+      signal: VA.llmAbort.signal,
     });
     if (!resp.ok || !resp.body) {
       const errTxt = await resp.text().catch(() => '');
@@ -1472,6 +1494,12 @@ async function vaOnUserTurn(userText) {
       }
     }
   } catch (e) {
+    if (e.name === 'AbortError') {
+      // user barged in: keep any partial reply for context, stay listening (status already set)
+      if (assistantText.trim()) VA.history.push({ role: 'assistant', content: assistantText + ' …(prekinjeno)' });
+      VA.isThinking = false;
+      return;
+    }
     vaSetStatus('napaka pri pošiljanju', 'error');
     console.error(e);
     VA.isThinking = false;
@@ -1490,7 +1518,6 @@ function vaStartTTS(cfg) {
   const ws = new WebSocket('wss://tts-rt.eu.soniox.com/tts-websocket');
   VA.ttsWs = ws;
   VA.isSpeaking = true;
-  VA.muteInput = true; // half-duplex: mute mic while speaking
   VA._ttsDoneHandled = false;
   VA._audioChunks = 0;
   VA.ttsStreamId = 'va-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
@@ -1562,11 +1589,11 @@ function vaOnTTSDone() {
   VA._ttsDoneHandled = true;
   try { if (VA.ttsWs) VA.ttsWs.close(); } catch (e) {}
   VA.ttsWs = null;
-  // Keep mic muted until the already-scheduled audio finishes playing, then resume listening.
+  // Stay "speaking" until the already-scheduled audio finishes playing, then resume listening.
   const drainMs = VA.playCtx ? Math.max(0, (VA.nextStartTime - VA.playCtx.currentTime)) * 1000 + 300 : 300;
-  setTimeout(() => {
+  VA._ttsDrainTimer = setTimeout(() => {
+    VA._ttsDrainTimer = null;
     VA.isSpeaking = false;
-    VA.muteInput = false;
     VA.finalText = '';
     VA.uttFired = false;
     if (VA.active) vaSetStatus('poslušam…', 'listening');
