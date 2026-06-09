@@ -142,10 +142,17 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 .va-interim:empty { padding: 0; }
 .va-empty { color: var(--text-dim); font-size: 0.82rem; text-align: center; margin: auto; }
 
-.va-controls { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.va-controls { display: flex; gap: 10px; align-items: center; padding: 10px 16px 12px; flex-shrink: 0; }
 .va-mic { flex: 1; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-size: 0.9rem; font-weight: 600; background: var(--green); color: #fff; transition: background .2s; }
 .va-mic.live { background: var(--red); }
 .va-mic:disabled { opacity: .5; cursor: not-allowed; }
+
+.va-input-row { display: flex; gap: 8px; align-items: center; padding: 12px 16px 0; border-top: 1px solid var(--border); flex-shrink: 0; }
+.va-text-input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 0.85rem; }
+.va-text-input:focus { outline: none; border-color: var(--accent); }
+.va-send { padding: 10px 14px; border: none; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; font-size: 1rem; line-height: 1; }
+.va-send:hover { background: var(--accent2); }
+.va-send:disabled { opacity: .5; cursor: not-allowed; }
 
 .va-settings { border-top: 1px solid var(--border); flex-shrink: 0; }
 .va-settings summary { padding: 10px 16px; cursor: pointer; color: var(--text-dim); font-size: 0.8rem; }
@@ -726,18 +733,22 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
 </div>
 
 <!-- ===== VOICE AGENT ===== -->
-<button id="voiceFab" onclick="vaTogglePanel()" title="Glasovni mentor">🎙️</button>
+<button id="voiceFab" onclick="vaTogglePanel()" title="Mentor (glas ali besedilo)">🎙️</button>
 <div id="voicePanel">
   <div class="va-header">
-    <h3>Glasovni mentor</h3>
+    <h3>Mentor</h3>
     <span class="va-status" id="vaStatus">pripravljen</span>
     <button class="va-close" onclick="vaClearConversation()" title="Počisti pogovor" aria-label="Počisti pogovor">🗑</button>
     <button class="va-close" onclick="vaTogglePanel()" title="Zapri" style="margin-left:4px;">×</button>
   </div>
   <div class="va-transcript" id="vaTranscript">
-    <div class="va-empty">Pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>
+    <div class="va-empty">Napiši vprašanje spodaj ali pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>
   </div>
   <div class="va-interim" id="vaInterim"></div>
+  <div class="va-input-row">
+    <input type="text" id="vaTextInput" class="va-text-input" placeholder="Napiši vprašanje…" onkeydown="vaTextKey(event)" autocomplete="off">
+    <button class="va-send" id="vaSend" onclick="vaSendText()" title="Pošlji" aria-label="Pošlji">➤</button>
+  </div>
   <div class="va-controls">
     <button class="va-mic" id="vaMic" onclick="vaToggleConversation()">🎤 Začni pogovor</button>
   </div>
@@ -1095,7 +1106,7 @@ const VA = {
   history: [],
   finalText: '', interimText: '',
   active: false, status: 'idle',
-  isSpeaking: false, isThinking: false, bargedIn: false,
+  isSpeaking: false, isThinking: false, bargedIn: false, silentTurn: false,
   curAssistantEl: null, ttsSentenceBuf: '',
 };
 
@@ -1187,7 +1198,7 @@ function vaClearConversation() {
   VA.history = [];
   try { localStorage.removeItem('voice_history'); } catch (e) {}
   document.getElementById('vaTranscript').innerHTML =
-    '<div class="va-empty">Pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>';
+    '<div class="va-empty">Napiši vprašanje spodaj ali pritisni <strong>Začni pogovor</strong> in govori po slovensko.<br>Mentor te lahko izprašuje, razlaga in te popravlja.</div>';
   vaSetInterim('');
 }
 
@@ -1465,12 +1476,39 @@ function vaFireUserTurn() {
   vaOnUserTurn(userText);
 }
 
+// ---- Text chat (typed input, no microphone, no speech) ----
+function vaTextKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); vaSendText(); }
+}
+async function vaSendText() {
+  const input = document.getElementById('vaTextInput');
+  const text = input.value.trim();
+  if (!text || VA.isThinking) return;
+  vaPersistInputs(); // pick up the OpenRouter key even if "Shrani" wasn't clicked
+  if (!vaCfg().openrouter) {
+    vaSetStatus('manjka OpenRouter ključ', 'error');
+    document.querySelector('.va-settings').setAttribute('open', '');
+    return;
+  }
+  input.value = '';
+  const send = document.getElementById('vaSend');
+  input.disabled = true; send.disabled = true;
+  try {
+    await vaOnUserTurn(text, { silent: true });
+  } finally {
+    input.disabled = false; send.disabled = false;
+    input.focus();
+  }
+}
+
 // ---- LLM turn (OpenRouter Claude, streaming + tool calling) ----
 // The model only gets a small INDEX of sources in its prompt. When it needs the actual
 // content it calls the get_source tool, and we return that one document. This keeps the
 // per-turn token cost low instead of sending all ~79k tokens of corpus every time.
-async function vaOnUserTurn(userText) {
+async function vaOnUserTurn(userText, opts) {
   if (VA.isThinking) return;
+  // Text-chat turns run silently (no speech); voice turns speak the reply.
+  VA.silentTurn = !!(opts && opts.silent);
   vaAddMsg('user', userText);
   VA.history.push({ role: 'user', content: userText });
   vaSaveHistory();
@@ -1501,7 +1539,7 @@ async function vaOnUserTurn(userText) {
   VA._assistantText = '';
   VA.ttsSentenceBuf = '';
   let ttsStarted = false;
-  const startTts = () => { if (!ttsStarted) { ttsStarted = true; vaStartTTS(cfg); } };
+  const startTts = () => { if (VA.silentTurn) return; if (!ttsStarted) { ttsStarted = true; vaStartTTS(cfg); } };
 
   try {
     for (let iter = 0; iter < 5; iter++) {
@@ -1536,13 +1574,37 @@ async function vaOnUserTurn(userText) {
 
   vaFlushTTS();
   VA.isThinking = false;
-  if (!ttsStarted && VA.active) vaSetStatus('poslušam…', 'listening');
+  if (!ttsStarted) vaSetStatus(VA.active ? 'poslušam…' : 'pripravljen', VA.active ? 'listening' : '');
+}
+
+function vaPrepareMessagesForCaching(messages) {
+  const cloned = messages.map(msg => {
+    const copy = { ...msg };
+    if (Array.isArray(msg.content)) copy.content = msg.content.map(part => ({ ...part }));
+    return copy;
+  });
+  const last = cloned[cloned.length - 1];
+  if (!last || last.content == null) return cloned;
+
+  const parts = Array.isArray(last.content)
+    ? last.content.map(part => ({ ...part }))
+    : [{ type: 'text', text: String(last.content) }];
+  if (!parts.length) return cloned;
+
+  parts[parts.length - 1].cache_control = { type: 'ephemeral' };
+  last.content = parts;
+  return cloned;
 }
 
 // One streaming LLM request. Streams text deltas to the transcript + TTS, and accumulates
 // any tool calls. Returns { text, toolCalls, finishReason }. Throws on HTTP error / abort.
 async function vaStreamLLM(cfg, messages, tools, startTts) {
-  const body = { model: cfg.model, messages: messages, stream: true };
+  const body = {
+    model: cfg.model,
+    messages: vaPrepareMessagesForCaching(messages),
+    stream: true,
+    cache_control: { type: 'ephemeral' },
+  };
   if (tools) body.tools = tools;
   const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -1669,6 +1731,7 @@ function vaSendTTSText(text) {
 }
 
 function vaFeedTTSDelta(delta) {
+  if (VA.silentTurn) return; // text-chat turn: no speech, don't buffer audio text
   VA.ttsSentenceBuf += delta;
   // flush on sentence boundaries to start speaking sooner
   const re = /[^.!?…:\n]*[.!?…:\n]+/g;
@@ -1681,6 +1744,7 @@ function vaFeedTTSDelta(delta) {
 }
 
 function vaFlushTTS() {
+  if (VA.silentTurn) return; // text-chat turn: nothing was spoken, nothing to flush
   if (VA.ttsSentenceBuf.trim()) { vaSendTTSText(VA.ttsSentenceBuf); VA.ttsSentenceBuf = ''; }
   if (VA.ttsWs && VA.ttsWs.readyState === 1) {
     VA.ttsWs.send(JSON.stringify({ text: '', text_end: true, stream_id: VA.ttsStreamId }));

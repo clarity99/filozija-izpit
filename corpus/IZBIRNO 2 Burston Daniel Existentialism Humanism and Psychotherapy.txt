@@ -1,0 +1,429 @@
+This paper, which was first published in Existential Analysis 14.2 July
+2003, is displayed here by kind permission of the author.
+Existentialism, Humanism and Psychotherapy
+By Daniel Burston, Ph.D.
+Abstract
+Authors of American psychology textbooks habitually refer to the
+“existential-humanistic” or “humanistic-existential” approach to treatment,
+while therapists in the UK and Europe say that this usage is inaccurate, and that
+the differences between the existential and humanistic approaches outweigh
+their similarities. To assess the merit of these competing claims, we must
+distinguish between literary and philosophical humanism, which is European in
+origin, and humanistic psychology, which is a recent American innovation.
+Having carefully discriminated between the two, it transpires that the similarities
+between the two approaches are often greater than Europeans concede, but also
+less than many Americans imagine. The fact that existential psychotherapy in
+Europe precedes American humanistic psychology by more than two decades
+entitles existential psychotherapists outside the USA to insist on the uniqueness
+and specificity of their approach.
+Consult almost any textbook on Abnormal Psychology in the United
+States and you will discover that existential psychotherapy and humanistic
+psychology are viewed as kindred approaches to treatment here. Under the
+heading of “Models of Mental Disorder”, often in the first few chapters, one
+generally finds the “humanistic-existential ” or “existential-humanistic” model
+discussed alongside of the cognitive, behavioral psychodynamic and
+sociocultural approaches. Meanwhile, in the UK and Europe, the existential and
+humanistic approaches are considered very different, the former originating on
+European soil, the latter being a recent American import regarded warily at best
+(e.g. Spinelli, 1989). The recent debate between John Rowan and Ernesto
+Spinelli in The Handbook of Humanistic Psychology (Schneider, K., Bugenthal, J. &
+Pierson, J.F., eds. 2001) indicates just how deep and convoluted these
+disagreements have become. While Rowan is eager to deny any fundamental
+differences, arguing that “we should talk all the time about existentialhumanistic psychotherapy” (p. 448), Spinelli replies that American psychologists
+are profoundly mistaken, and that we must make clear conceptual distinctions
+between the existential and humanistic approaches to psychotherapy.
+Some would argue that this spirited disagreement only concerns a handful
+of psychotherapy practitioners. But beyond that, everyone who reads, writes or
+309
+
+uses Abnormal Psychology textbooks for instructional purposes and is sensitive
+to issues of cultural difference has a stake in this discussion too. Why? Because
+if Rowan is right, we North Americans are justified in speaking of an
+“existential-humanistic” approach to therapy, and should continue to do so in
+future. But if Spinelli is right, “existential-humanistic psychotherapy” is really an
+American hybrid with no counterparts elsewhere around the world. If that is so,
+in the interests of accuracy, we must expunge the term from our textbooks, or
+confine such usage to the description of American psychology alone.
+Before we tackle these issues directly, it is instructive to note that there are
+good historical reasons for these divergent cultural perspectives. And as a result
+there is a lot of confusion abroad about the exact meaning of terms like
+“existentialism”, “humanism” and “humanistic psychology”, and the areas of
+convergence, overlap and/or dissimilarity between them. This confusion is
+intensified by the fact that some psychologists in America used one term to
+modify the other for descriptive purposes. Thus, in the 1950’s, for example,
+Erich Fromm used the phrase “existential humanism” to characterize his
+particular orientation (Fromm, 1955; Burston 1991), while Hazel Barnes
+referred to the “humanistic existentialism” of Jean-Paul Sartre, among others
+(Barnes, 1959). And following in the footsteps of Rollo May, (an analysand of
+Fromm’s, as well as a pupil of Paul Tillich, incidentally), James Bugenthal, first
+President of the Association for Humanistic Psychology, authored an influential
+book entitled Psychotherapy and Process: The Fundamentals of An ExistentialHumanistic Approach in 1978.
+Unfortunately, terms like “humanism” and “existentialism” often acquire
+culturally and historically specific meanings for those who use them, so that
+perfect clarity or unanimity with respect to their “real” meaning could remain
+elusive. Nevertheless, the effort to clarify what these terms have meant
+historically is valuable, because it illumines what these words mean to individual
+practitioners, and why. Which brings us to our first question, namely; what is
+existentialism?
+Basically, existentialism is an approach to philosophy and psychotherapy
+which says that our disparate social and historical situations, differences in age,
+gender, ability and so on, all of us, by virtue of being human , and conscious of
+our inevitable death, partake of the same basic structures of existence, and a
+need to confer value and to impart meaning to life through action and decision.
+The way in which existence is structured into different modes or structures of
+possibility -- i.e. authentic and inauthentic modes of being (Kierkegaard,
+Heidegger); the “being” and “having” modes (Marcel, Fromm); being "in itself",
+"for itself" and "for others", (Hegel, Sartre); or various modes of relatedness to others
+(Buber, Binswanger, Fromm) -- varies significantly from one theorist to
+310
+
+another. But the underlying premises about the human condition, and the
+pervasive threats to human dignity, autonomy and solidarity with others are
+often strikingly similar. So despite a plurality of approaches and ideas here, it is
+possible to discern a kind of meta-theoretical consensus about certain fundamentals
+that place existentialist psychotherapists in the same universe of discourse
+(Burston, 2000, chapter 2).
+When did existentialism begin? That is more difficult to answer. Though
+Jaspers and Heidegger were already talking about a philosophy of existenz
+during World War I, the term “existentialism” was actually coined later, by a
+French journalist who was interviewing Sartre in 1941 . Sartre liked the label,
+which gained popularity, and by the end of World War II, was being applied to a
+wide range of thinkers, not all of whom welcomed this avant garde designation.
+Theologians Paul Tillich and Gabriel Marcel embraced it enthusiastically. But
+Martin Buber acknowledged his affinities with others who bore this label quite
+reluctantly, and always emphasized the uniqueness of his own point particular of
+view. And strangest of all, perhaps, Martin Heidegger rejected the label
+completely, though his name and ideas figure prominently in every anthology or
+historical overview of existential philosophy and psychotherapy.
+So existentialism is no stranger to mystery or paradox. On the contrary, it
+makes a generous allowance for their presence in human affairs, and has to, to
+make some sense of its own murky origins. For confusion about who is (or is
+not) an existentialist deepened, rather than dissipated, as the 20th century wore
+on. The term “existentialism” grew even more popular during the fifties and
+sixties, as Sartre and de Beauvoir’s novels and plays enthralled audiences on
+both sides of the Atlantic. Because of their prodigious literary efforts, other
+literary figures, including Dostoyevsky, Baudelaire, Kafka , Gide and Rilke were
+soon embraced by members of the movement as forerunners or fellow travelers.
+So on reflection, there has never been a stable or binding consensus regarding
+the leadership or the terms of membership in the existentialist movement, nor
+precisely when it took root historically.
+To trace the existential lineage as far back as possible, we could follow
+Paul Tillich and Rollo May, and begin with Blais Pascal, whom I call a protoexistentialist . For the sake of clarity and convenience, I will defer to the
+prevailing consensus, and date the origins of existentialism to Kierkegaard and
+Nietzsche. But that raises the question: why do we customarily begin with
+them?
+To get this matter into historical perspective, remember that in medieval
+times, philosophy was considered the handmaiden of theology, and only
+emancipated herself from her subservient role through long and strenuous
+effort. Initially, the growth of the natural sciences contributed to her growing
+autonomy. After all, by the mid- 19th century, the astounding growth of the
+311
+
+natural sciences had shattered what little was left of the old scholastic synthesis,
+and promised to confer many moral and material blessings on believers in the
+new cult of “Progress”.
+Unfortunately, by this time, however, philosophy’s erstwhile ally was
+threatening to turn into a new oppressor, as positivists proposed that
+philosophy had been freed from fealty to theology to assume her true historic
+mission, which was to be a handmaiden to the natural sciences. Kierkegaard and
+Nietzsche were two notable thinkers who refused positivism’s stifling embrace,
+and argued that the real goals of philosophy, namely, self knowledge and
+freedom, are not to be found on this path , and that the apparent gains afforded
+by modern science and “progress” generally mask alarming trends toward
+conformity, banality and other deformations of the human spirit.
+By the late twenties and early thirties, European psychiatrists who were
+inspired by existentialism started to create a new approach to the study and
+treatment of mental disorder called Daseinsanalysis, existential analysis, or
+existential psychotherapy. Some, like Karl Jaspers, were philosophers-turnedpsychiatrists. Others, like Ludwig Binswanger, Medard Boss, Viktor Frankl and
+R.D.Laing, among others, were erstwhile psychoanalysts who left the Freudian
+fold because they were dissatisfied with its blind allegiance to the natural
+scientific account of the mind. It was only after the Second World War, in the
+late 1950’s, that Rollo May joined with Ernst Angel and Ludwig Binswanger’s
+remarkable pupil, Henri Ellenberger , to introduce Americans to existential
+psychiatry in the ground-breaking anthology Existence , which became a huge
+best seller just when humanistic psychology was beginning to take root here
+(May,R., Angel, E., & Ellenberger, H., 1958).
+If existential psychotherapy germinated in Europe during the Weimar
+period, humanistic psychology took root in the United States in the Cold War
+era. Though somewhat difficult to define, it can be described as a broad
+spectrum of approaches to treatment that arose here as a spirited challenge to
+the rival orthodoxies of Freudian theory, which dominated psychiatry, and
+behaviorism, which dominated psychology.
+In fairness to all concerned, psychoanalysis and behaviorism have since
+moved on, and have long since ceded their hegemonic control of the mental
+health professions in the USA to cognitivism and psychopharmacology. But to
+its credit, at its inception, humanistic psychology reproached both
+psychoanalysis and behaviorism with 1) excessively mechanistic and
+deterministic accounts of the origins and meaning of human behavior, and 2)
+with doctrinal rigidity and narrowness , and tendencies toward reification, depersonalization, intellectualization and excessive ritualism in the therapeutic
+encounter between clinicians and patients. And in this, of course, they
+resembled their existentialist counterparts considerably.
+312
+
+However, despite the convergent tone of their critiques, one striking
+difference between the two groups was that existential therapists, for the most
+part, were psychiatrists, while their humanistic counterparts in America were
+mostly psychologists. Rollo May tried to bridge this gap by founding the Journal
+of Existential Psychology and Psychiatry in 1959, and was partially successful, for a
+time. Another difference, which was related to the former one, was that the antiFreudian rhetoric that prevailed among humanistic psychologists in the sixties
+and seventies was considered quite excessive by many Europeans, even among
+those who cherished profound reservations about Freud’s theory and therapy.
+Judging from recent transatlantic debates, however, this venerable bone
+of contention has lost all of its former urgency. Other issues have taken
+precedence, such as the status of the “real” self, the notion of “selfactualization”, the pursuit of wholeness, congruence, and so on. But let us be
+frank. Despite these (and other) differences which Spinelli, in particular, lays so
+much emphasis on (e.g. Spinelli, 1989), the fact remains that existential analysis
+and humanistic psychology do have much in common. Consider their
+approaches to symptom removal. The medical model and behaviorist
+approaches regard a symptom of “mental disorder” as a form of needless
+suffering that should be mitigated or removed as quickly and as painlessly as
+possible. While the patient’s co-operation is necessary, of course, the technical
+procedures involved here depend primarily on the knowledge and the agency of
+the therapist/expert.
+From the existential and humanistic standpoints, by contrast, the
+suffering caused by a patient’s “symptomatology” represents an occasion, and
+indeed, an opportunity, for “soul searching” and earnest reflection in what must
+soon become a collaborative search or struggle to elucidate and restore a
+measure of meaning that was somehow lost or obscured in the person’s struggle
+to adapt to adverse circumstances . Though not couched in a religious idiom , of
+course, this means that suffering may have a “redemptive” function, pointing
+the person toward a more authentic, integrated existence, rather than being a
+mere nuisance to be eliminated so he (or she) can get on with the real business
+of living. If anything, in fact, from both the existential and humanistic
+perspective, the reverse is usually true, since it is our (deliberate or inadvertent)
+neglect of “the real business of living” that the symptom calls attention to in the
+first place! Furthermore, as regards treatment, while the therapist’s training and
+experience are crucial to the therapeutic encounter, the patient’s agency and/or
+willingness to enter into a genuine dialogue with the therapist are of equal or
+greater importance in the long run. Their willingness to take responsibility for
+their own lives, ultimately, is also key.
+Second, note that existential psychotherapy and humanistic psychology
+share a core conviction that they bring to bear on psychotherapy practice,
+313
+
+namely, the role of self-authorship or self-determination in the formation of our
+character and conduct. According to this view, we are never entirely determined
+by our past experiences. Personal choice plays a significant role in who we are
+and what we become. But contrary to popular imagination, this is not a new idea
+- something that Sartre or Maslow dreamt up one fine sunny day somewhere in
+the middle of the twentieth century. Aristotle addressed this issue in the
+Nichomachean Ethics in the fourth century BC. And almost two thousand years
+later, in an "Oration On the Dignity of Man", delivered in 1487, Pico Della
+Mirandola said that the distinctive attribute of our species -- which separates us
+from animals, on the one hand, and angels, on the other -- is that we are
+endowed with both animal and angelic propensities, but are free to choose
+whether we embrace and affirm our bestial or angelic natures (Mirandola, 1965).
+By contrast with humans, presumably, animals and angels lack this dual nature
+and the corresponding freedom to choose. They simply are what they are.
+According to existentialists and humanists then, heredity and environment,
+instinct and adaptation play important roles in shaping character and conduct,
+but they do not necessarily determine what we are or who we become.
+Finally, another similarity between existential analysis and humanistic
+psychology is that to varying degrees, and in different ways, they both draw on
+an older, European tradition of literary and philosophical humanism. The
+humanist outlook is sometimes associated with the Stoic philosopher Terence,
+whose motto was “Homo sum; nihil humani me alienum puto”, or “ I am a
+man; nothing human is alien to me”. The broad implication of this remark is
+that Terence refused to identify with one particular ethnic group. On the
+contrary, he regarded himself as what the Stoics called a cosmopolites – a citizen of
+the universe, and not the representative of a particular race, nation or religious
+orientation. In short, Terence embraced a pan-human identity that transcends
+the vagaries of ethnicity and religious belief.
+During the Renaissance, the term “humanism” was associated with the
+revival of pagan learning by the likes of Marsilio Ficino and Pico della
+Mirandolla, who stressed 1) the need for well-rounded people to study “the
+humanities”, and 2) the essential compatibility between neo-Stoic and neoPlatonic philosophy and the Christian faith. Later, the term “humanism” was
+used to describe the sensibilities of non-dogmatic Christians like Petrarch and
+Erasmus, who felt that Christianity is as germaine to the problems of living in
+this world as it is to seeking salvation in the next.
+Later still, the term “humanism” was attached to the work of historians
+like Giambatista Vico and Jacob Burkhardt, who resisted the positivist program
+for the human sciences, and looked back at the Renaissance as a period
+particularly worthy of veneration. But by the mid 19th century, it was also
+adopted by left-wing Hegelians like Ludwig Feuerbach and Karl Marx.
+314
+
+Following in the Enlightenment tradition, they used the term “humanism” to
+describe an explicitly atheistic outlook that explains belief in the supernatural and
+longings for transcendence as the result of the (unconscious) projection of the
+“human essence” into an otherworldly realm, which is conjured up by the
+faithful as a consolation for (and the legitimation of) an unjust social order that
+constrains or deforms our latent sociability and capacity to reason. Unlike
+Burkhardt and others, whose humanism was centered on the study or emulation
+of the past, Feuerbach and Marx made the realization of humanism a task for
+the future. Marx summed this up nicely when he said that we are still caught up
+in the era of human prehistory . By this reckoning, real human history has yet to
+begin, and will not commence until exploitation, oppression and the ideologies
+that serve to justify or disguise them all cease to exist.
+In the 20th century , the term humanism usually denoted a resolute refusal
+to ground ethics in any supernatural or transcendental framework, coupled with
+an optimistic faith in the ability of science to illumine and improve our collective
+lot. Thus, for example, at mid century, Julian Huxley spoke in useful and
+illuminating ways of “evolutionary humanism”. Unfortunately, during the 20th
+century (and to this day) some of the more facile, unreflective forms this brand
+of humanism takes on verge on sheer scientism – an uncritical reliance on
+science to provide solutions to existential problems. Humanism of this skeptical
+and/or ethical persuasion is simply an extension of old-fashioned
+Enlightenment rationalism, and despite obvious points of similarity, is quite
+wary of Marxism, which it regards as a kind of a secular religion.
+In any case, the preceding reflections make it crystal clear that no one owns
+the term “humanism”, and with it, the right to prescribe how it ought to be
+used, or what it ought to mean. Judging from history, humanism may be
+religious or irreligious, contemplative or activist, forward or backward looking.
+But that does not mean that the term itself is so fraught with ambiguity that it is
+meaningless, even in our ostensibly posthuman era. There is a lucid, intelligible
+core to humanism that informs all of its diverse manifestations. For whatever
+form it takes, humanism emphasizes the fundamental unity of the human
+species, and our duty to defend and promote human dignity and welfare in our
+time, rather than in kingdom come. And despite the astonishing amount of antihumanist rhetoric we’ve endured from the avant garde lately, I fail to see why we
+should abandon or even question these values. On the contrary, now more than
+ever, we should embrace and defend them.
+Having said that , however, it is also imperative that, as scholars and as
+psychologists, we learn to differentiate clearly between “humanism” as a
+philosophical outlook and “humanistic psychology”. The former began as a
+movement within Christianity that fostered the revival of pagan learning, and the
+ongoing cultivation of a tradition of multilingual, bookish reflection on history
+315
+
+and the human condition that stretches backwards to Herodotus and the Bible ,
+and forwards to politically engaged (post-Christian) intellectuals like George
+Orwell and Albert Camus, and to exemplary scholars like Lewis Mumford or
+Northrop Frye, who were equally well versed in the wisdom of Christian and
+pre-Christian (and/or non-Christian) civilizations. By contrast, humanistic
+psychology began as a specifically American response to a specifically American
+situation – the dominance of behaviorism and psychoanalysis over the mental
+health field in the Cold War era. And while it has changed and developed
+considerably since its inception, no doubt, the relationship of humanistic
+psychology to the older, European humanism has been problematic, and
+possibly quite tenuous at times. Indeed, to existentialist critics , it often seemed
+that humanistic psychology focused so much on experiential processes in the
+here and now that it treated philosophy, not as a parent discipline, or as a basis
+for rigorous reflection, as existentialists do habitually, but as a kind of
+afterthought, or a resource-pool of intriguing ideas that can be invoked or
+ignored at the theorist’s convenience.
+While focusing on the inter-experiential flow between therapist and
+patient can be extremely useful, and extremely powerful, therapeutically
+speaking , an exclusive focus on this kind of therapeutic virtuosity can also
+foster a kind of thoughtlessness and a strident anti-intellectualism that is
+completely at odds with the bookish and cultivated sensibilities that people used
+to call “humanist”. And it was from this humanist – rather than “humanistic”perspective that the inimitable Sigmund Koch lashed out against the “human
+potential” and “sensitivity training” movements spawned by humanistic
+psychology in the 1960’s. In his estimation, this movement
+“ . . . is adept at the image-making maneuver of evading human reality in
+the very process of seeking to discover and enhance it. It seeks to court
+spontaneity and authenticity by artifice; to combat instrumentalism
+instrumentally; to provide access to experience by reducing it to a packaged
+commodity; to liberate individuality by group shaping. Within the lexicon of its
+concepts and methods, openness becomes transparency; love, caring and
+sharing become a barter of “reinforcements or perhaps mutual ego-titillation;
+aesthetic receptivity or immediacy becomes “sensory awareness”. It can provide
+only a grotesque simulacrum of every noble quality it courts. (Koch, 1971,
+pp.315-316).
+While some cringe at the severity of this sweeping dismissal, most of my
+experiences with groups of this kind in the seventies were quite consistent with
+this description. There was a pervasive anti-intellectualism about them , and a
+deep seated suspicion of any attempt to preserve one’s dignity through reserve
+316
+
+or mere silence, responses to group pressure which are understood and
+respected instinctively by Europeans. Fortunately, humanistic psychology has
+evolved considerably since then, acquiring much more philosophical
+sophistication. And in all fairness, humanistic psychologists have been quite
+receptive to the ideas and publications of existential and phenomenological
+thinkers and therapists in North America, providing them with attentive,
+sympathetic audiences while the rest of the profession generally tuned them out.
+So, how can we best describe the differences between humanistic
+psychologists and existential psychotherapists? Despite some noteworthy
+exceptions here and there, existentialists are humanists in the older, European
+sense of the word more often than humanistic psychologists are, as a rule,
+because they tend to ground their approach in a firm and fluent grasp of
+specific texts, and of specific themes and thinkers that precede them. They
+don’t minimize or ignore the importance of openness to experience or authentic
+self-disclosure, but they don’t make a fetish of them either. Moreover,
+existentialists tend to possess a clearer recognition of human limits and a tragic
+sense of life that is typically European, and which qualifies their emphasis on
+self-authorship and/or self-actualization with reminders of the inevitability of
+suffering and death , and the elements of mystery and paradox that suffuse
+every human life.
+That being so, it appears that John Rowan is right to claim that a Venn
+diagram depicting the relationship between existential and humanistic
+psychotherapy would show a considerable degree of overlap between the two
+orientations. But in fairness to Spinelli et al., that statement is chiefly true with
+respect to the United States. Why? Because beginning with Rollo May, a pupil
+of Tillich , an admirer of Buber’s, and a founding member of the Association
+for Humanistic Psychology, there have been many theorists and therapists here
+who wear both these “hats” quite comfortably – James Bugenthal, Eugene
+Gendlin, Thomas Greening, Alvin Mahrer, Ilene Serlin and Kirk Schneider,
+among others. And conversely, as Rowan rightly insists, there are many
+existential psychotherapists here and abroad who, whether they care to
+acknowledge it or not, are indebted to humanistic psychology for specific
+“techniques” or clinical interventions of one sort or another.
+Having said that, however, Rowan is thoroughly mistaken when he claims
+that “humanistic psychotherapy, in all its variants, is the real home of
+existentialism as a praxis” (p. 446). And when he goes on to claim that
+“Existential analysis, on the other hand, is a heresy, a cult or a sideshow by
+comparison” with humanistic psychology, he exceeds the bounds of courtesy as
+well as common sense. The historical record flatly contradicts these assertions
+which, as it happens, illustrate my own thesis about the profoundly a-historical
+character of humanistic psychology’s approach to the theory and practice of
+317
+
+psychotherapy. Rowan reveals his impoverished historical perspective clearly
+when he speculates that the reason existential and humanistic psychotherapy
+“became separate” was probably that “existential writers saw the excesses of
+humanistic psychology during the 1960’s and early 1970’s and did not want to
+be tarred with the same brush” (p. 448). In truth, like Sigmund Koch, many
+existentialists did take their distance from humanistic psychology in the sixties
+and seventies, and Rowan’s “explanation” for the alleged factionalism of Spinelli
+et al. might be valid if the history of psychotherapy began in the sixties.
+(Perhaps it did, for Rowan personally!) However, the fact remains that that
+existential psychotherapy, in one form or another, precedes humanistic
+psychology by at least two decades in Europe. So it was never a question of
+these two orientations “becoming separate” at some unspecified historical
+juncture. They were separate to begin with, and for a variety of historical
+reasons, were only blended here in the United States.
+That being so, should we cease speaking (or writing) of an “existentialhumanistic” orientation in deference to Spinelli and his colleagues? Obviously
+not, if we are speaking about local and/or national trends or perspectives. But if
+we are addressing global trends in the world of psychotherapy, we should always
+qualify this usage by emphasizing its reference to American psychology. If this
+seems unnecessarily cumbersome, or prompts the accusation that in so doing,
+we are pandering to unrealistic expectations or unjustified demands , remember
+that our failure to do so will feed fears among psychologists internationally
+regarding our ostensibly colonialist tendency to “Americanize” psychology, and
+to negate the Otherness and specificity of divergent cultural perspectives. Unless
+these fears are grounded in fact, this is something that any humanist with some
+sense of history and a modicum of tact will strenuously try to avoid.
+References
+Barnes, H. (1959) Humanistic Existentialism: The Literature of
+Possibility, Lincoln: University of Nebraska Press.
+Bugenthal, J. (1978), Psychotherapy and Process: The Fundamentals
+of An Existential-Humanist Approach , New York: McGraw Hill.
+Burston, D. (1991), The Legacy of Erich Fromm, Cambridge: Harvard
+University Press.
+Burston, D. (1996), The Wing of Madness: The Life and Work of
+R.D.Laing, Cambridge: Harvard University Press.
+Fromm, E. (1955), The Sane Society, Greenwich: Fawcett Premier
+Books.
+Koch, S. (1971), “Reflections on Psychology”, Social Research, 38,
+669-709.
+May,R., Angel, E. & Ellenberger, H. (1958) Existence: A New
+318
+
+Dimension in Psychiatry and Psychology, New York: Simon &
+Schuster.
+Mirandolla, P. 1965, “On The Dignity of Man”, Library of the Liberal
+Arts, New York: Bobbs-Merrill.
+Rowan, J. (2001) “Existential Analysis and Humanistic
+Psychotherapy”, in Schneider, K., Bugenthal, J. & Pierson, J.F.,
+Eds, The Handbook of Humanistic Psychology: Leading Edges in
+Theory, Research & Practice, Thousand Oaks: Sage.
+Spinelli, E., 1989, The Interpreted World: An Introduction to
+Phenomenological Psychology, London: Sage.
+Spinelli, E., 2001, “A Reply to John Rowan”, ”, in Schneider, K.,
+Bugenthal, J. & Pierson, J.F., eds, The Handbook of Humanistic
+Psychology: Leading Edges in Theory, Research & Practice,
+Thousand Oaks: Sage.
+
+319
+
+
