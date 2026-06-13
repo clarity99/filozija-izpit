@@ -763,8 +763,8 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
         </select>
       </div>
 
-      <div class="va-soniox-only">
-        <label>Soniox API ključ (STT + TTS)</label>
+      <div>
+        <label>Soniox API ključ (Soniox način: STT+TTS · OpenAI način: slovenski prepis govora)</label>
         <input type="password" id="vaSoniox" placeholder="soniox_...">
       </div>
       <div class="va-soniox-only">
@@ -791,6 +791,12 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
       <div class="va-openai-only">
         <label>OpenAI Realtime model</label>
         <input type="text" id="vaOpenAIModel" placeholder="gpt-realtime-2">
+      </div>
+      <div class="va-openai-only">
+        <label style="display:flex; align-items:flex-start; gap:8px; cursor:pointer; margin-bottom:0;">
+          <input type="checkbox" id="vaOAITranscribe" style="width:auto; margin-top:2px;">
+          <span>Slovenski prepis govora prek Soniox (boljši od OpenAI Whisper). Model še vedno posluša tvoj glas neposredno — to vpliva le na zapis pogovora. Potrebuje Soniox ključ.</span>
+        </label>
       </div>
       <div class="va-openai-only">
         <label>Glas (OpenAI)</label>
@@ -1165,6 +1171,7 @@ function vaLoadSettings() {
   document.getElementById('vaOpenAI').value = localStorage.getItem('voice_openai_key') || '';
   document.getElementById('vaOpenAIModel').value = localStorage.getItem('voice_openai_model') || 'gpt-realtime-2';
   document.getElementById('vaOpenAIVoice').value = localStorage.getItem('voice_openai_voice') || 'marin';
+  document.getElementById('vaOAITranscribe').checked = localStorage.getItem('voice_oai_transcribe') !== '0';
   vaApplyModeUI();
 }
 function vaPersistInputs() {
@@ -1177,6 +1184,7 @@ function vaPersistInputs() {
   localStorage.setItem('voice_openai_key', document.getElementById('vaOpenAI').value.trim());
   localStorage.setItem('voice_openai_model', document.getElementById('vaOpenAIModel').value.trim() || 'gpt-realtime-2');
   localStorage.setItem('voice_openai_voice', document.getElementById('vaOpenAIVoice').value || 'marin');
+  localStorage.setItem('voice_oai_transcribe', document.getElementById('vaOAITranscribe').checked ? '1' : '0');
 }
 function vaSaveSettings() {
   vaPersistInputs();
@@ -1193,7 +1201,14 @@ function vaCfg() {
     openai: localStorage.getItem('voice_openai_key') || '',
     openaiModel: localStorage.getItem('voice_openai_model') || 'gpt-realtime-2',
     openaiVoice: localStorage.getItem('voice_openai_voice') || 'marin',
+    oaiTranscribe: localStorage.getItem('voice_oai_transcribe') !== '0',
   };
+}
+
+// In OpenAI mode, use Soniox to transcribe the user's voice for the on-screen transcript
+// (better Slovenian than Whisper) — requires the toggle on AND a Soniox key.
+function vaUseSonioxTranscribe(cfg) {
+  return cfg.mode === 'openai' && cfg.oaiTranscribe && !!cfg.soniox;
 }
 
 function vaSetStatus(text, cls) {
@@ -1349,8 +1364,12 @@ async function vaStartConversation() {
     // OpenAI Realtime handles VAD, barge-in and audio playback itself (see vaStartRealtime).
     vaSetStatus('povezujem…', 'thinking');
     await vaLoadCorpus(); // ensure the source index + get_source tool are ready before the handshake
+    VA.transcribeOnly = vaUseSonioxTranscribe(cfg);
     try {
       await vaStartRealtime(cfg);
+      // Optionally run Soniox STT in parallel on the same mic, purely to caption the user's
+      // speech in Slovenian (Whisper is weak at it). No LLM/TTS/barge-in on this path.
+      if (VA.transcribeOnly) await vaStartSTT(cfg);
     } catch (e) {
       console.error('[realtime] start failed', e);
       vaSetStatus('napaka: ' + (e.message || e), 'error');
@@ -1358,6 +1377,7 @@ async function vaStartConversation() {
     }
     return;
   }
+  VA.transcribeOnly = false;
 
   // Unlock audio playback inside the user gesture (browser autoplay policy),
   // otherwise the AudioContext created later stays suspended and TTS is silent.
@@ -1392,6 +1412,7 @@ function vaStopConversation() {
   VA.sttWs = VA.ttsWs = VA.workletNode = VA.sourceNode = VA.captureCtx = VA.micStream = null;
   VA.sendBuf = []; VA.finalText = ''; VA.interimText = '';
   VA.curAssistantEl = null; VA._assistantText = ''; VA._rtUserInterim = '';
+  VA.transcribeOnly = false;
   vaSetInterim('');
   document.getElementById('vaMic').textContent = '🎤 Začni pogovor';
   document.getElementById('vaMic').classList.remove('live');
@@ -1503,7 +1524,8 @@ function vaHandleSTT(msg) {
   // BARGE-IN: user starts speaking while the assistant is responding -> interrupt it and
   // let this become a new turn. (After our pause-based turn end, the previous utterance is
   // fully finalized, so new content here is genuine user speech, not a trailing token.)
-  if (hasContent && (VA.isSpeaking || VA.isThinking)) vaBargeIn();
+  // Transcribe-only (OpenAI mode): OpenAI handles barge-in itself; we just caption the user.
+  if (!VA.transcribeOnly && hasContent && (VA.isSpeaking || VA.isThinking)) vaBargeIn();
 
   let gotContent = false;
   for (const tk of tokens) {
@@ -1524,11 +1546,28 @@ function vaHandleSTT(msg) {
   // without being cut off. Resets on every new token.
   if (gotContent) {
     if (VA.silenceTimer) clearTimeout(VA.silenceTimer);
-    const pauseMs = (parseFloat(localStorage.getItem('voice_pause')) || 3) * 1000;
-    VA.silenceTimer = setTimeout(() => {
-      if (VA.active && !VA.isThinking && !VA.isSpeaking) vaFireUserTurn();
-    }, pauseMs);
+    if (VA.transcribeOnly) {
+      // Display-only: after a short pause, commit the captioned line. No LLM turn.
+      VA.silenceTimer = setTimeout(() => { if (VA.active) vaCommitUserTranscript(); }, 1200);
+    } else {
+      const pauseMs = (parseFloat(localStorage.getItem('voice_pause')) || 3) * 1000;
+      VA.silenceTimer = setTimeout(() => {
+        if (VA.active && !VA.isThinking && !VA.isSpeaking) vaFireUserTurn();
+      }, pauseMs);
+    }
   }
+}
+
+// Commit the accumulated Soniox transcript as a user line (OpenAI mode captioning only).
+function vaCommitUserTranscript() {
+  if (VA.silenceTimer) { clearTimeout(VA.silenceTimer); VA.silenceTimer = null; }
+  const txt = (VA.finalText || '').trim();
+  VA.finalText = '';
+  vaSetInterim('');
+  if (!txt) return;
+  vaAddMsg('user', txt);
+  VA.history.push({ role: 'user', content: txt });
+  vaSaveHistory();
 }
 
 // Interrupt an in-progress assistant response (TTS playback + LLM stream).
@@ -1892,12 +1931,14 @@ function vaRealtimeSessionConfig(cfg) {
     instructions: vaRealtimeInstructions(),
     audio: {
       input: {
-        transcription: { model: 'whisper-1', language: 'sl' },
         turn_detection: { type: 'semantic_vad' },
       },
       output: { voice: cfg.openaiVoice },
     },
   };
+  // Only let OpenAI transcribe the user when we're NOT using Soniox for the transcript.
+  // (The realtime model understands the audio directly either way — this is display-only.)
+  if (!vaUseSonioxTranscribe(cfg)) session.audio.input.transcription = { model: 'whisper-1', language: 'sl' };
   if (tools.length) { session.tools = tools; session.tool_choice = 'auto'; }
   return session;
 }
