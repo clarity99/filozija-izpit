@@ -756,27 +756,58 @@ blockquote { border-left: 3px solid var(--accent2); padding-left: 12px; margin: 
     <summary>⚙️ Nastavitve (API ključi)</summary>
     <div class="va-set-body">
       <div>
+        <label>Način pogovora (engine)</label>
+        <select id="vaMode" onchange="vaApplyModeUI()">
+          <option value="soniox">Soniox (STT/TTS) + OpenRouter (Claude)</option>
+          <option value="openai">OpenAI Realtime (WebRTC, govor-v-govor)</option>
+        </select>
+      </div>
+
+      <div class="va-soniox-only">
         <label>Soniox API ključ (STT + TTS)</label>
         <input type="password" id="vaSoniox" placeholder="soniox_...">
       </div>
-      <div>
+      <div class="va-soniox-only">
         <label>OpenRouter API ključ</label>
         <input type="password" id="vaOpenRouter" placeholder="sk-or-...">
       </div>
-      <div>
+      <div class="va-soniox-only">
         <label>Model (OpenRouter)</label>
         <input type="text" id="vaModel" placeholder="anthropic/claude-opus-4.6">
       </div>
-      <div>
+      <div class="va-soniox-only">
         <label>Glas (Soniox TTS)</label>
         <input type="text" id="vaVoice" placeholder="Adrian">
       </div>
-      <div>
+      <div class="va-soniox-only">
         <label>Premor pred odgovorom (s) — koliko časa tišine pomeni "končal sem"</label>
         <input type="number" id="vaPause" min="1" max="10" step="0.5" placeholder="3">
       </div>
+
+      <div class="va-openai-only">
+        <label>OpenAI API ključ</label>
+        <input type="password" id="vaOpenAI" placeholder="sk-...">
+      </div>
+      <div class="va-openai-only">
+        <label>OpenAI Realtime model</label>
+        <input type="text" id="vaOpenAIModel" placeholder="gpt-realtime-2">
+      </div>
+      <div class="va-openai-only">
+        <label>Glas (OpenAI)</label>
+        <select id="vaOpenAIVoice">
+          <option value="marin">marin</option>
+          <option value="cedar">cedar</option>
+          <option value="alloy">alloy</option>
+          <option value="ash">ash</option>
+          <option value="ballad">ballad</option>
+          <option value="coral">coral</option>
+          <option value="sage">sage</option>
+          <option value="verse">verse</option>
+        </select>
+      </div>
+
       <button class="va-save" onclick="vaSaveSettings()">Shrani</button>
-      <p class="va-hint">Ključi se shranijo lokalno v tem brskalniku (localStorage) in se ne pošljejo nikamor razen Soniox/OpenRouter. Mikrofon deluje le prek <strong>https</strong> (npr. GitHub Pages) ali <strong>localhost</strong>.</p>
+      <p class="va-hint">Ključi se shranijo lokalno v tem brskalniku (localStorage) in se ne pošljejo nikamor razen izbrane storitve (Soniox/OpenRouter ali OpenAI). Mikrofon deluje le prek <strong>https</strong> (npr. GitHub Pages) ali <strong>localhost</strong>.</p>
     </div>
   </details>
 </div>
@@ -1047,7 +1078,7 @@ function answerQuiz(idx) {
 }
 
 // ============================================================
-// ===== VOICE AGENT (Soniox STT/TTS + OpenRouter Claude) =====
+// ===== VOICE AGENT (Soniox STT/TTS + OpenRouter Claude  |  OpenAI Realtime WebRTC) =====
 // ============================================================
 
 // Grounding digest of the course material (Uvod v filozofijo za psihoterapevte 2025).
@@ -1101,6 +1132,7 @@ const VA = {
   sttWs: null, ttsWs: null,
   micStream: null, captureCtx: null, workletNode: null, sourceNode: null,
   playCtx: null, nextStartTime: 0, playSources: [],
+  pc: null, dc: null, remoteAudio: null,        // OpenAI Realtime (WebRTC)
   sendBuf: [],
   corpus: null,
   history: [],
@@ -1116,19 +1148,35 @@ function vaTogglePanel() {
   if (open) vaLoadSettings();
 }
 
+// Show only the fields that belong to the currently selected engine.
+function vaApplyModeUI() {
+  const mode = document.getElementById('vaMode').value;
+  document.querySelectorAll('.va-soniox-only').forEach(el => el.style.display = (mode === 'soniox') ? '' : 'none');
+  document.querySelectorAll('.va-openai-only').forEach(el => el.style.display = (mode === 'openai') ? '' : 'none');
+}
+
 function vaLoadSettings() {
+  document.getElementById('vaMode').value = localStorage.getItem('voice_mode') || 'soniox';
   document.getElementById('vaSoniox').value = localStorage.getItem('voice_soniox_key') || '';
   document.getElementById('vaOpenRouter').value = localStorage.getItem('voice_or_key') || '';
   document.getElementById('vaModel').value = localStorage.getItem('voice_model') || 'anthropic/claude-opus-4.6';
   document.getElementById('vaVoice').value = localStorage.getItem('voice_name') || 'Adrian';
   document.getElementById('vaPause').value = localStorage.getItem('voice_pause') || '3';
+  document.getElementById('vaOpenAI').value = localStorage.getItem('voice_openai_key') || '';
+  document.getElementById('vaOpenAIModel').value = localStorage.getItem('voice_openai_model') || 'gpt-realtime-2';
+  document.getElementById('vaOpenAIVoice').value = localStorage.getItem('voice_openai_voice') || 'marin';
+  vaApplyModeUI();
 }
 function vaPersistInputs() {
+  localStorage.setItem('voice_mode', document.getElementById('vaMode').value || 'soniox');
   localStorage.setItem('voice_soniox_key', document.getElementById('vaSoniox').value.trim());
   localStorage.setItem('voice_or_key', document.getElementById('vaOpenRouter').value.trim());
   localStorage.setItem('voice_model', document.getElementById('vaModel').value.trim() || 'anthropic/claude-opus-4.6');
   localStorage.setItem('voice_name', document.getElementById('vaVoice').value.trim() || 'Adrian');
   localStorage.setItem('voice_pause', document.getElementById('vaPause').value || '3');
+  localStorage.setItem('voice_openai_key', document.getElementById('vaOpenAI').value.trim());
+  localStorage.setItem('voice_openai_model', document.getElementById('vaOpenAIModel').value.trim() || 'gpt-realtime-2');
+  localStorage.setItem('voice_openai_voice', document.getElementById('vaOpenAIVoice').value || 'marin');
 }
 function vaSaveSettings() {
   vaPersistInputs();
@@ -1137,10 +1185,14 @@ function vaSaveSettings() {
 }
 function vaCfg() {
   return {
+    mode: localStorage.getItem('voice_mode') || 'soniox',
     soniox: localStorage.getItem('voice_soniox_key') || '',
     openrouter: localStorage.getItem('voice_or_key') || '',
     model: localStorage.getItem('voice_model') || 'anthropic/claude-opus-4.6',
     voice: localStorage.getItem('voice_name') || 'Adrian',
+    openai: localStorage.getItem('voice_openai_key') || '',
+    openaiModel: localStorage.getItem('voice_openai_model') || 'gpt-realtime-2',
+    openaiVoice: localStorage.getItem('voice_openai_voice') || 'marin',
   };
 }
 
@@ -1267,7 +1319,13 @@ async function vaStartConversation() {
   vaPersistInputs(); // use whatever is currently typed in the fields, even without clicking "Shrani"
   vaLoadCorpus();     // prefetch full source texts (non-blocking); cached for the session
   const cfg = vaCfg();
-  if (!cfg.soniox || !cfg.openrouter) {
+  if (cfg.mode === 'openai') {
+    if (!cfg.openai) {
+      vaSetStatus('manjka OpenAI ključ', 'error');
+      document.querySelector('.va-settings').setAttribute('open', '');
+      return;
+    }
+  } else if (!cfg.soniox || !cfg.openrouter) {
     vaSetStatus('manjkajo ključi', 'error');
     document.querySelector('.va-settings').setAttribute('open', '');
     return;
@@ -1284,6 +1342,23 @@ async function vaStartConversation() {
   VA.muteInput = false;
   VA.silenceTimer = null;
   VA._sttMsgCount = 0;
+  document.getElementById('vaMic').textContent = '⏹ Končaj pogovor';
+  document.getElementById('vaMic').classList.add('live');
+
+  if (cfg.mode === 'openai') {
+    // OpenAI Realtime handles VAD, barge-in and audio playback itself (see vaStartRealtime).
+    vaSetStatus('povezujem…', 'thinking');
+    await vaLoadCorpus(); // ensure the source index + get_source tool are ready before the handshake
+    try {
+      await vaStartRealtime(cfg);
+    } catch (e) {
+      console.error('[realtime] start failed', e);
+      vaSetStatus('napaka: ' + (e.message || e), 'error');
+      vaStopConversation();
+    }
+    return;
+  }
+
   // Unlock audio playback inside the user gesture (browser autoplay policy),
   // otherwise the AudioContext created later stays suspended and TTS is silent.
   try {
@@ -1293,8 +1368,6 @@ async function vaStartConversation() {
     if (VA.playCtx.state === 'suspended') await VA.playCtx.resume();
     console.log('[TTS] playback ctx state:', VA.playCtx.state, 'rate:', VA.playCtx.sampleRate);
   } catch (e) { console.warn('[TTS] could not init playback ctx', e); }
-  document.getElementById('vaMic').textContent = '⏹ Končaj pogovor';
-  document.getElementById('vaMic').classList.add('live');
   await vaStartSTT(cfg);
 }
 
@@ -1304,6 +1377,12 @@ function vaStopConversation() {
   if (VA._sttReconnectTimer) { clearTimeout(VA._sttReconnectTimer); VA._sttReconnectTimer = null; }
   VA.isSpeaking = false; VA.muteInput = false; VA.isThinking = false;
   vaStopPlayback();
+  // OpenAI Realtime teardown
+  try { if (VA.dc) VA.dc.close(); } catch (e) {}
+  try { if (VA.pc) VA.pc.close(); } catch (e) {}
+  if (VA.remoteAudio) { try { VA.remoteAudio.pause(); VA.remoteAudio.srcObject = null; } catch (e) {} }
+  VA.dc = VA.pc = null;
+  // Soniox teardown
   try { if (VA.sttWs && VA.sttWs.readyState === 1) { VA.sttWs.send(''); VA.sttWs.close(); } } catch (e) {}
   try { if (VA.ttsWs) VA.ttsWs.close(); } catch (e) {}
   try { if (VA.workletNode) VA.workletNode.disconnect(); } catch (e) {}
@@ -1312,6 +1391,7 @@ function vaStopConversation() {
   if (VA.micStream) VA.micStream.getTracks().forEach(t => t.stop());
   VA.sttWs = VA.ttsWs = VA.workletNode = VA.sourceNode = VA.captureCtx = VA.micStream = null;
   VA.sendBuf = []; VA.finalText = ''; VA.interimText = '';
+  VA.curAssistantEl = null; VA._assistantText = ''; VA._rtUserInterim = '';
   vaSetInterim('');
   document.getElementById('vaMic').textContent = '🎤 Začni pogovor';
   document.getElementById('vaMic').classList.remove('live');
@@ -1484,8 +1564,19 @@ async function vaSendText() {
   const input = document.getElementById('vaTextInput');
   const text = input.value.trim();
   if (!text || VA.isThinking) return;
-  vaPersistInputs(); // pick up the OpenRouter key even if "Shrani" wasn't clicked
-  if (!vaCfg().openrouter) {
+  vaPersistInputs(); // pick up the key even if "Shrani" wasn't clicked
+  const cfg = vaCfg();
+  if (cfg.mode === 'openai') {
+    // OpenAI Realtime: text rides the live data channel, so a session must be running.
+    if (!VA.active || !VA.dc || VA.dc.readyState !== 'open') {
+      vaSetStatus('najprej začni pogovor (OpenAI način)', 'error');
+      return;
+    }
+    input.value = '';
+    vaSendRealtimeText(text);
+    return;
+  }
+  if (!cfg.openrouter) {
     vaSetStatus('manjka OpenRouter ključ', 'error');
     document.querySelector('.va-settings').setAttribute('open', '');
     return;
@@ -1767,6 +1858,161 @@ function vaOnTTSDone() {
     VA.uttFired = false;
     if (VA.active) vaSetStatus('poslušam…', 'listening');
   }, drainMs);
+}
+
+// ============================================================
+// ---- OpenAI Realtime (WebRTC) ----
+// A self-contained alternative engine. OpenAI does speech-to-speech directly: server-side
+// VAD, barge-in and audio playback are all handled by the API + WebRTC, so the Soniox
+// pause-timer / STT-reconnect / PCM-scheduling machinery is NOT used on this path.
+// Grounding is preserved via the same get_source tool + source index as the Soniox/Claude path.
+
+function vaRealtimeInstructions() {
+  return VA_SYSTEM_PROMPT + (VA.sourceIndex
+    ? '\n\n=== KAZALO VIROV (z get_source preberi polno besedilo) ===\n' + VA.sourceIndex
+    : '\n\n=== GRADIVO (povzetek) ===\n' + VA_COURSE_FALLBACK);
+}
+
+function vaRealtimeTools() {
+  if (!(VA.sourceIds && VA.sourceIds.length)) return [];
+  return [{
+    type: 'function',
+    name: 'get_source',
+    description: 'Vrne polno besedilo izbranega vira iz gradiva za izpit. Pokliči, ko potrebuješ konkretno vsebino, citat ali podrobnost iz vira.',
+    parameters: { type: 'object', properties: { source_id: { type: 'string', description: 'ID vira iz kazala, npr. s1.', enum: VA.sourceIds } }, required: ['source_id'] },
+  }];
+}
+
+// Full session config sent with the SDP handshake (mirrors session.update).
+function vaRealtimeSessionConfig(cfg) {
+  const tools = vaRealtimeTools();
+  const session = {
+    type: 'realtime',
+    model: cfg.openaiModel,
+    instructions: vaRealtimeInstructions(),
+    audio: {
+      input: {
+        transcription: { model: 'whisper-1', language: 'sl' },
+        turn_detection: { type: 'semantic_vad' },
+      },
+      output: { voice: cfg.openaiVoice },
+    },
+  };
+  if (tools.length) { session.tools = tools; session.tool_choice = 'auto'; }
+  return session;
+}
+
+async function vaStartRealtime(cfg) {
+  const pc = new RTCPeerConnection();
+  VA.pc = pc;
+
+  // Remote assistant audio plays through a hidden <audio> element (WebRTC delivers a MediaStream).
+  pc.ontrack = (e) => {
+    if (!VA.remoteAudio) { VA.remoteAudio = new Audio(); VA.remoteAudio.autoplay = true; }
+    VA.remoteAudio.srcObject = e.streams[0];
+    VA.remoteAudio.play().catch(err => console.warn('[realtime] audio play blocked', err));
+  };
+
+  pc.addTrack(VA.micStream.getTracks()[0]);
+
+  const dc = pc.createDataChannel('oai-events');
+  VA.dc = dc;
+  dc.addEventListener('open', () => {
+    console.log('[realtime] data channel open');
+    if (VA.active) vaSetStatus('poslušam…', 'listening');
+  });
+  dc.addEventListener('message', vaHandleRealtimeEvent);
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  const fd = new FormData();
+  fd.set('sdp', offer.sdp);
+  fd.set('session', JSON.stringify(vaRealtimeSessionConfig(cfg)));
+
+  const resp = await fetch('https://api.openai.com/v1/realtime/calls', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + cfg.openai },
+    body: fd,
+  });
+  if (!resp.ok) throw new Error('OpenAI ' + resp.status + ' ' + (await resp.text().catch(() => '')).slice(0, 200));
+  await pc.setRemoteDescription({ type: 'answer', sdp: await resp.text() });
+}
+
+// Handle inbound realtime server events. Event names cover the GA shapes (and a couple of
+// legacy aliases) so the transcript stays in sync regardless of minor schema drift.
+async function vaHandleRealtimeEvent(e) {
+  let ev; try { ev = JSON.parse(e.data); } catch (err) { return; }
+  const t = ev.type || '';
+
+  // User speech -> text (live interim + final)
+  if (t === 'conversation.item.input_audio_transcription.delta') {
+    VA._rtUserInterim = (VA._rtUserInterim || '') + (ev.delta || '');
+    vaSetInterim(VA._rtUserInterim);
+    return;
+  }
+  if (t === 'conversation.item.input_audio_transcription.completed') {
+    const txt = (ev.transcript || VA._rtUserInterim || '').trim();
+    VA._rtUserInterim = '';
+    vaSetInterim('');
+    if (txt) { vaAddMsg('user', txt); VA.history.push({ role: 'user', content: txt }); vaSaveHistory(); }
+    return;
+  }
+  if (t === 'input_audio_buffer.speech_started') {
+    if (VA.active) vaSetStatus('poslušam…', 'listening');
+    return;
+  }
+
+  // Assistant speech transcript (streamed)
+  if (t === 'response.output_audio_transcript.delta' || t === 'response.audio_transcript.delta') {
+    if (!VA.curAssistantEl) { VA.curAssistantEl = vaAddMsg('assistant', ''); VA._assistantText = ''; }
+    VA._assistantText += ev.delta || '';
+    VA.curAssistantEl.textContent = VA._assistantText;
+    vaScrollBottom(false);
+    if (VA.active) vaSetStatus('govorim…', 'speaking');
+    return;
+  }
+  if (t === 'response.output_audio_transcript.done' || t === 'response.audio_transcript.done') {
+    const txt = (ev.transcript || VA._assistantText || '').trim();
+    if (txt) { VA.history.push({ role: 'assistant', content: txt }); vaSaveHistory(); }
+    VA.curAssistantEl = null; VA._assistantText = '';
+    return;
+  }
+
+  // Function calling (grounding via get_source)
+  if (t === 'response.function_call_arguments.done') {
+    vaRealtimeToolCall(ev);
+    return;
+  }
+
+  if (t === 'response.done') {
+    if (VA.active) vaSetStatus('poslušam…', 'listening');
+    return;
+  }
+  if (t === 'error') {
+    console.error('[realtime] error event', ev);
+    vaSetStatus('napaka: ' + ((ev.error && ev.error.message) || 'OpenAI'), 'error');
+    return;
+  }
+}
+
+function vaRealtimeToolCall(ev) {
+  vaSetStatus('berem vir…', 'thinking');
+  const out = vaExecTool({ function: { name: ev.name, arguments: ev.arguments } });
+  console.log('[realtime tool] ' + ev.name + '(' + (ev.arguments || '') + ') -> ' + out.length + ' chars');
+  if (VA.dc && VA.dc.readyState === 'open') {
+    VA.dc.send(JSON.stringify({ type: 'conversation.item.create', item: { type: 'function_call_output', call_id: ev.call_id, output: out } }));
+    VA.dc.send(JSON.stringify({ type: 'response.create' }));
+  }
+}
+
+// Typed message over the live data channel (text chat in OpenAI mode).
+function vaSendRealtimeText(text) {
+  vaAddMsg('user', text);
+  VA.history.push({ role: 'user', content: text });
+  vaSaveHistory();
+  VA.dc.send(JSON.stringify({ type: 'conversation.item.create', item: { type: 'message', role: 'user', content: [{ type: 'input_text', text: text }] } }));
+  VA.dc.send(JSON.stringify({ type: 'response.create' }));
 }
 
 // ---- Web Audio playback (gapless scheduling) ----
