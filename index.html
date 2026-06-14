@@ -1141,6 +1141,7 @@ const VA = {
   pc: null, dc: null, remoteAudio: null,        // OpenAI Realtime (WebRTC)
   sendBuf: [],
   corpus: null,
+  wakeLock: null,
   history: [],
   finalText: '', interimText: '',
   active: false, status: 'idle',
@@ -1324,6 +1325,38 @@ function vaParseSources(full) {
   VA.sourceIds = Object.keys(VA.sources);
 }
 
+// ---- Screen Wake Lock ----
+// On phones, leaving the screen untouched during a voice turn triggers OS autolock, which
+// freezes the page and kills the AudioContext / STT socket / WebRTC peer — audio cuts off.
+// Holding a screen wake lock while the conversation is live prevents that autolock.
+// The lock auto-releases whenever the page is hidden, so we re-acquire on visibilitychange.
+// Fails silently on unsupported browsers (Wake Lock is iOS 16.4+ / Android Chrome only).
+async function vaAcquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    VA.wakeLock = await navigator.wakeLock.request('screen');
+    VA.wakeLock.addEventListener('release', () => { VA.wakeLock = null; });
+    console.log('[wakelock] acquired');
+  } catch (e) {
+    VA.wakeLock = null;
+    console.warn('[wakelock] request failed', e);
+  }
+}
+function vaReleaseWakeLock() {
+  if (!VA.wakeLock) return;
+  try { VA.wakeLock.release(); } catch (e) {}
+  VA.wakeLock = null;
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || !VA.active) return;
+  // Wake lock is auto-released when the page hides; re-acquire on return.
+  if (!VA.wakeLock) vaAcquireWakeLock();
+  // Resume any audio contexts the browser suspended while backgrounded (best-effort —
+  // this revives playback/capture contexts, not a closed WS or dead WebRTC peer).
+  try { if (VA.playCtx && VA.playCtx.state === 'suspended') VA.playCtx.resume(); } catch (e) {}
+  try { if (VA.captureCtx && VA.captureCtx.state === 'suspended') VA.captureCtx.resume(); } catch (e) {}
+});
+
 // ---- Conversation control ----
 async function vaToggleConversation() {
   if (VA.active) { vaStopConversation(); return; }
@@ -1352,6 +1385,7 @@ async function vaStartConversation() {
     return;
   }
   VA.active = true;
+  vaAcquireWakeLock(); // keep the phone screen awake so autolock can't freeze the audio
   VA.history = VA.history || [];
   VA.uttFired = false;
   VA.muteInput = false;
@@ -1393,6 +1427,7 @@ async function vaStartConversation() {
 
 function vaStopConversation() {
   VA.active = false;
+  vaReleaseWakeLock();
   if (VA.silenceTimer) { clearTimeout(VA.silenceTimer); VA.silenceTimer = null; }
   if (VA._sttReconnectTimer) { clearTimeout(VA._sttReconnectTimer); VA._sttReconnectTimer = null; }
   VA.isSpeaking = false; VA.muteInput = false; VA.isThinking = false;
